@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 
-img = cv.imread("Images/newest_image.jpg", cv.IMREAD_GRAYSCALE)
+img = cv.imread("SOURCE.jpg", cv.IMREAD_GRAYSCALE)
 blur = cv.GaussianBlur(img, (101, 101), 0)
 clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
 kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (221, 221)) #around 211-221
@@ -35,4 +35,6 @@ detector = cv.SimpleBlobDetector_create(params)
 blobs = detector.detect(corrected2)
 
 output = cv.drawKeypoints(img, blobs, np.array([]), (0,0,255), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+
 cv.imwrite("Output.jpg", output)
+print("CFU:", len(blobs))
