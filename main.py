@@ -6,10 +6,9 @@ import preprocessing, colony_detection, dish_detection
 def pipeline(
         raw_img_path, 
         save_path, 
-        kernel_size=211,
+        kernel_size=251, #221 for whole image
         save_preprocessing=False,
         save_dishes=False,
-        use_dishes=False,
         ):
     
     raw_img = cv.imread(raw_img_path)
@@ -22,26 +21,29 @@ def pipeline(
         save=save_dishes,
     )
     
-    if use_dishes:
-        pass
+    preprocessed = []
 
-    else:
-        preprocessed = preprocessing.preprocess(
-            gray_img=gray_img,
+    for idx, dish in enumerate(dishes):
+        gray_dish = cv.cvtColor(dish, cv.COLOR_BGR2GRAY)
+        preprocessed.append(preprocessing.preprocess(
+            gray_img=gray_dish,
             save_path=save_path,
             kernel_size=kernel_size,
-            save=save_preprocessing
+            save=save_preprocessing,
+            tag=idx
+        ))
+
+    for idx, pre in enumerate(preprocessed):
+        colony_detection.detect_colonies(
+            preprocessed_img=pre,
+            background_img=dishes[idx],
+            save_path=save_path,
+            tag=idx
         )
-    
-    colony_detection.detect_colonies(
-        preprocessed_img=preprocessed,
-        background_img=raw_img,
-        save_path=save_path
-    )
 
 pipeline(
-    "SOURCE.jpg",
-    r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925\Results",
-    save_dishes=True,
-    save_preprocessing=True
+    "Results/SOURCE.jpg",
+    "Results",
+    save_preprocessing=True,
+    save_dishes=True
 )

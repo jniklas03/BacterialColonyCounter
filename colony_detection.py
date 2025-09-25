@@ -6,6 +6,7 @@ def detect_colonies(
         preprocessed_img,
         background_img,
         save_path,
+        tag = 0,
         save=True
 ):
     params = cv.SimpleBlobDetector_Params()
@@ -33,7 +34,7 @@ def detect_colonies(
     if save:
         save_path_blob_detection = save_path + r"\Colonies"
         os.makedirs(save_path_blob_detection, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_blob_detection, "Colonies.jpg"), output)
+        cv.imwrite(os.path.join(save_path_blob_detection, f"Colonies_{tag}.jpg"), output)
     print(f"{len(blobs)} colonies detected.")
 
     return(blobs, output)
