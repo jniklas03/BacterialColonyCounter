@@ -3,6 +3,7 @@ import numpy as np
 import os
 
 def preprocess(
+        file,
         gray_img,
         save_path,
         tag = 0,
@@ -19,7 +20,7 @@ def preprocess(
     if save:
         save_path_preprocessing = save_path + r"\Preprocessing"
         os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, f"preprocessed_{tag}.jpg"), corrected)
+        cv.imwrite(os.path.join(save_path_preprocessing, f"{file}preprocessed_{tag}.jpg"), corrected)
     
     print("Preprocessing successful.")
 

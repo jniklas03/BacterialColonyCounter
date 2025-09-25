@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 import os
 
-def detect_dishes(raw_img, gray_image, save_path, save=True):
+def detect_dishes(file, raw_img, gray_image, save_path, save=True):
     save_path_dish_detection = save_path + r"\Dishes"
 
     circles = cv.HoughCircles(
@@ -40,7 +40,7 @@ def detect_dishes(raw_img, gray_image, save_path, save=True):
 
             if save:
                 os.makedirs(save_path_dish_detection, exist_ok=True)
-                cv.imwrite(os.path.join(save_path_dish_detection, f"dish_{i}.png"), square_crop)
+                cv.imwrite(os.path.join(save_path_dish_detection, f"{file}_dish_{i}.png"), square_crop)
 
         print(f"{len(circles)} dishes detected.")
 
