@@ -19,19 +19,17 @@ def detect_dishes(file, raw_img, gray_image, save_path, save=True):
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int")
 
-        # Keep only the first 6 (strongest detections)
+        # keep only the first 6 (keeps detecting random stuff if slice > n_dishes)
         circles = circles[:6]
         dishes = []
 
         for i, (x, y, r) in enumerate(circles, start=1):
-            # Circular mask
+
             mask = np.zeros_like(gray_image)
             cv.circle(mask, (x, y), r, 255, -1)
 
-            # Apply mask
             dish_crop = cv.bitwise_and(raw_img, raw_img, mask=mask)
 
-            # Square crop
             x1, y1 = max(0, x-r), max(0, y-r)
             x2, y2 = min(raw_img.shape[1], x+r), min(raw_img.shape[0], y+r)
             square_crop = dish_crop[y1:y2, x1:x2]

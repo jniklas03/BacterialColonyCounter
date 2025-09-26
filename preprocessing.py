@@ -20,7 +20,7 @@ def preprocess(
     if save:
         save_path_preprocessing = save_path + r"\Preprocessing"
         os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, f"{file}preprocessed_{tag}.jpg"), corrected)
+        cv.imwrite(os.path.join(save_path_preprocessing, f"{file}_preprocessed_{tag+1}.jpg"), corrected)
     
     print("Preprocessing successful.")
 

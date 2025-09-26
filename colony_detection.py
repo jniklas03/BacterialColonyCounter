@@ -35,7 +35,7 @@ def detect_colonies(
     if save:
         save_path_blob_detection = save_path + r"\Colonies"
         os.makedirs(save_path_blob_detection, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_blob_detection, f"{file}_colonies_{tag}.jpg"), output)
+        cv.imwrite(os.path.join(save_path_blob_detection, f"{file}_colonies_{tag+1}.jpg"), output)
     print(f"{len(blobs)} colonies detected.")
 
     return(blobs, output)

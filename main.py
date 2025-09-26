@@ -6,7 +6,7 @@ import preprocessing, colony_detection, dish_detection
 def pipeline(
         source, 
         save_path, 
-        kernel_size=261, #221 for whole image
+        kernel_size=350, #221 for whole image
         save_preprocessing=False,
         save_dishes=False,
         ):
@@ -46,7 +46,9 @@ def pipeline(
         )
 
 pipeline(
-    "Results/Sources/22.09.2025.jpg",
-    "Results"
+    "Sources/23.09.2025.jpg",
+    r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925",
+    save_dishes=True,
+    save_preprocessing=True
 )
 

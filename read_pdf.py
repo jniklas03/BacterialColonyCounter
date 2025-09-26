@@ -42,13 +42,9 @@ def read_pdf(
 
     return(output)
 
-
-
-
-
 read_pdf(
-    source=r"Results\PDFs\22.9.2025.pdf",
-    file="22.9.2025.pdf",
-    save_path=r"Results",
+    source=r"PDFs\23.9.2025.pdf",
+    file="23.9.2025.pdf",
+    save_path=r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925",
     save_images=True
 )
