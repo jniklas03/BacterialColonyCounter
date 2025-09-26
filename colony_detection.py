@@ -10,6 +10,10 @@ def detect_colonies(
         tag = 0,
         save=True
 ):
+    """
+    
+    
+    """
     params = cv.SimpleBlobDetector_Params()
     params.minThreshold = 0
     params.maxThreshold = 255
@@ -36,6 +40,9 @@ def detect_colonies(
         save_path_blob_detection = save_path + r"\Colonies"
         os.makedirs(save_path_blob_detection, exist_ok=True)
         cv.imwrite(os.path.join(save_path_blob_detection, f"{file}_colonies_{tag+1}.jpg"), output)
+        with open(f"{os.path.join(save_path_blob_detection, file)}.txt", "a") as fp:
+            fp.write(f"{len(blobs)} \n")
+
     print(f"{len(blobs)} colonies detected.")
 
-    return(blobs, output)
+    return(len(blobs))

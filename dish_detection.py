@@ -2,43 +2,57 @@ import cv2 as cv
 import numpy as np
 import os
 
-def detect_dishes(file, raw_img, gray_image, save_path, save=True):
-    save_path_dish_detection = save_path + r"\Dishes"
+def detect_dishes(file, raw_img, gray_img, save_path, n_dishes=6, save=True):
+    """
+    Detects dishes in the image and crops in around them. Arguments generally kept track of by main.py.
+    
+    Keyword arguments:
+    file -- Name of the file without the extension, so "22.09.2025" NOT "22.09.2025.jpg".
+    raw_img -- OpenCv object of the raw image, i.e. cv.imread(image).
+    gray_img -- OpenCv object of the grayscale image, i.e cv.imread(image, cv.IMREAD_GRAYSCALE).
+    save_path -- Path where the cropped dishes should be saved.
+    n_dishes -- Amount of expected dishes. If a dish isn't detected turn it up. WILL detect random stuff if set higher than necessary.
+    save -- Save the crops of the dishes?
+    """
+    
+    save_path_dish_detection = save_path + r"\Dishes" # path for the dish crops
 
-    circles = cv.HoughCircles(
-        gray_image,
-        cv.HOUGH_GRADIENT,
-        dp=1.2,
-        minDist=900,
-        param1=100,
-        param2=30,
-        minRadius=400,
-        maxRadius=1000
+    circles = cv.HoughCircles( # creates a numpy array of detected circles
+        gray_img, # image, should be grayscale
+        cv.HOUGH_GRADIENT, # detection method
+        dp=1.2, # resolution used for the detection; dp=2 means half resolution of the original image
+        minDist=900, # minimum distance between the centers of circles in px
+        param1=100, # upper threshold for canny edge detection (uses canny edge detection internally)
+        param2=30, # threshold for center detection; lower values are more sensitive, but prone to false positves
+        minRadius=400, # minimum and maxmimum radius in px; both set very generously due to problems with detection
+        maxRadius=1000 
     )
 
     if circles is not None:
-        circles = np.round(circles[0, :]).astype("int")
+        circles = np.round(circles[0, :]).astype("int") 
 
-        # keep only the first 6 (keeps detecting random stuff if slice > n_dishes)
-        circles = circles[:6]
-        dishes = []
+        circles = circles[:n_dishes] # limits junk output to the expected amount of dishes; the dishes should appear in the first crops
+        dishes = [] # list for the cropped images; gets returned
 
-        for i, (x, y, r) in enumerate(circles, start=1):
+        for idx, (x, y, r) in enumerate(circles, start=1): # circles defined by their x and y coordinates of their center as well as their radius; idx is used for naming the files
 
-            mask = np.zeros_like(gray_image)
-            cv.circle(mask, (x, y), r, 255, -1)
+            mask = np.zeros_like(gray_img) # mask (black image) the size of the input image
+            cv.circle(mask, (x, y), r, 255, -1) # fills the mask with white circles at the location of the detected dishes
 
-            dish_crop = cv.bitwise_and(raw_img, raw_img, mask=mask)
+            masked_img = cv.bitwise_and(  # applies mask (keeps values where the mask is white) to original image
+                raw_img, 
+                raw_img, 
+                mask=mask)
 
-            x1, y1 = max(0, x-r), max(0, y-r)
-            x2, y2 = min(raw_img.shape[1], x+r), min(raw_img.shape[0], y+r)
-            square_crop = dish_crop[y1:y2, x1:x2]
+            x1, y1 = max(0, x-r), max(0, y-r) # defines top left corner of the crop
+            x2, y2 = min(raw_img.shape[1], x+r), min(raw_img.shape[0], y+r) # defines bottom right corner of the crop
+            square_crop = masked_img[y1:y2, x1:x2] # applies a square crop for the masked dishes
 
             dishes.append(square_crop)
 
-            if save:
+            if save: # saving the dishes if the flag is passed
                 os.makedirs(save_path_dish_detection, exist_ok=True)
-                cv.imwrite(os.path.join(save_path_dish_detection, f"{file}_dish_{i}.png"), square_crop)
+                cv.imwrite(os.path.join(save_path_dish_detection, f"{file}_dish_{idx}.png"), square_crop)
 
         print(f"{len(circles)} dishes detected.")
 
