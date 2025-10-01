@@ -1,6 +1,7 @@
 from pypdf import PdfReader
 import os
 import re
+import yaml
 
 def read_pdf(
         source,
@@ -37,14 +38,15 @@ def read_pdf(
 
     output = dict(zip(all_names, all_counts))
 
-    with open(f"{os.path.join(save_path_extracted_pdf, file)}.txt", "w") as f:
-        f.write(str(output))
+    yaml_filename = os.path.join(save_path_extracted_pdf, f"{os.path.splitext(file)[0]}.yaml")
+    with open(yaml_filename, "w") as f:
+        yaml.safe_dump(output, f, sort_keys=False)
 
     return(output)
 
 read_pdf(
-    source=r"PDFs\23.9.2025.pdf",
-    file="23.9.2025.pdf",
+    source=r"PDFs\22.9.2025.pdf",
+    file="22.9.2025.pdf",
     save_path=r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925",
-    save_images=True
+    save_images=False
 )
