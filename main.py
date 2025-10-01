@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 import os
 import preprocessing, colony_detection, dish_detection
+import yaml
 
 def pipeline(
         source,
@@ -26,7 +27,11 @@ def pipeline(
     raw_img = cv.imread(source)
     gray_img = cv.cvtColor(raw_img, cv.COLOR_BGR2GRAY)
 
-    dishes = dish_detection.detect_dishes(
+    data = {}
+    data[file] = {"dishes":[]}
+
+    dishes, data = dish_detection.detect_dishes(
+        data=data,
         file=file,
         raw_img=raw_img,
         gray_img=gray_img,
@@ -50,12 +55,16 @@ def pipeline(
 
     for idx, pre in enumerate(preprocessed):
         colony_detection.detect_colonies(
+            data=data,
             file=file,
             preprocessed_img=pre,
             raw_img=dishes[idx],
             save_path=save_path,
             tag=idx
         )
+
+    with open(os.path.join(save_path, "data.yaml"), "w") as f:
+        yaml.dump(data, f)
 
 pipeline(
     "Sources/23.09.2025.jpg",

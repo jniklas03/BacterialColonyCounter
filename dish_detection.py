@@ -2,11 +2,12 @@ import cv2 as cv
 import numpy as np
 import os
 
-def detect_dishes(file, raw_img, gray_img, save_path, n_dishes=6, save=True):
+def detect_dishes(data, file, raw_img, gray_img, save_path, n_dishes=6, save=True):
     """
     Detects dishes in the image and crops in around them. Returns the cropped images as a list.
     
     Keyword arguments:
+    data -- data.yaml metadata file.
     file -- Name of the file without the extension, so "22.09.2025" NOT "22.09.2025.jpg".
     raw_img -- OpenCv object of the raw image, i.e. cv.imread(image).
     gray_img -- OpenCv object of the grayscale image, i.e cv.imread(image, cv.IMREAD_GRAYSCALE).
@@ -32,7 +33,7 @@ def detect_dishes(file, raw_img, gray_img, save_path, n_dishes=6, save=True):
         circles = np.round(circles[0, :]).astype("int") 
 
         circles = circles[:n_dishes] # limits junk output to the expected amount of dishes; the dishes should appear in the first crops
-        dishes = [] # list for the cropped images; gets returned
+        dishes = [] # list for the cropped images
 
         for idx, (x, y, r) in enumerate(circles, start=1): # circles defined by their x and y coordinates of their center as well as their radius; idx is used for naming the files
 
@@ -50,6 +51,16 @@ def detect_dishes(file, raw_img, gray_img, save_path, n_dishes=6, save=True):
 
             dishes.append(square_crop)
 
+            if data:
+                data[file]["dishes"].append(
+                    {
+                        "id":idx,
+                        "center": [int(x), int(y)],
+                        "radius": int(r),
+                        "colony_count": None
+                    }
+                )
+
             if save: # saving the dishes if the flag is passed
                 os.makedirs(save_path_dish_detection, exist_ok=True)
                 cv.imwrite(os.path.join(save_path_dish_detection, f"{file}_dish_{idx}.png"), square_crop)
@@ -60,4 +71,4 @@ def detect_dishes(file, raw_img, gray_img, save_path, n_dishes=6, save=True):
     else:
         print("No circles detected.")
 
-    return(dishes)
+    return(dishes, data)
