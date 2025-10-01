@@ -66,10 +66,10 @@ def pipeline(
     with open(os.path.join(save_path, "data.yaml"), "w") as f:
         yaml.dump(data, f)
 
-pipeline(
-    "Sources/23.09.2025.jpg",
-    r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925",
-    save_dishes=True,
-    save_preprocessing=True
-)
+# pipeline(
+#     "Sources/24.09.2025.jpg",
+#     r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925",
+#     save_dishes=True,
+#     save_preprocessing=True
+# )
 
