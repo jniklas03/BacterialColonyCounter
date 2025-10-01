@@ -4,7 +4,7 @@ import os
 
 def detect_dishes(file, raw_img, gray_img, save_path, n_dishes=6, save=True):
     """
-    Detects dishes in the image and crops in around them. Arguments generally kept track of by main.py.
+    Detects dishes in the image and crops in around them. Returns the cropped images as a list.
     
     Keyword arguments:
     file -- Name of the file without the extension, so "22.09.2025" NOT "22.09.2025.jpg".

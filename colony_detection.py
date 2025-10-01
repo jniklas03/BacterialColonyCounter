@@ -5,14 +5,21 @@ import os
 def detect_colonies(
         file,
         preprocessed_img,
-        background_img,
+        raw_img,
         save_path,
         tag = 0,
         save=True
 ):
     """
-    
-    
+    Detects individual colonies. 
+
+    Keyword arguments:
+    file -- Name of the file without the extension, so "22.09.2025" NOT "22.09.2025.jpg".
+    preprocessed_img -- openCV object of preprocessed image (grayscale).
+    raw_img -- openCV object of raw/initial image.
+    save_path -- Filepath where the images should be saved. The script makes different folders for different images by default.
+    tag -- Internal parameter passed by main.py for processing and naming multiple dishes. Don't change.
+    save -- Save the preprocessed images?
     """
     params = cv.SimpleBlobDetector_Params()
     params.minThreshold = 0
@@ -34,7 +41,7 @@ def detect_colonies(
 
     blobs = detector.detect(preprocessed_img)
 
-    output = cv.drawKeypoints(background_img, blobs, np.array([]), (0,255,0), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    output = cv.drawKeypoints(raw_img, blobs, np.array([]), (0,255,0), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
 
     if save:
         save_path_blob_detection = save_path + r"\Colonies"
