@@ -3,6 +3,9 @@ import numpy as np
 import os
 import optuna
 import yaml
+import logging
+import sys
+from datetime import date
 
 def tuning(
         trial,
@@ -45,19 +48,19 @@ def tuning(
 
     params = cv.SimpleBlobDetector_Params() # Intializes params for the detector and passes the ones to be tuned to optuna
     params.minThreshold = 0
-    params.maxThreshold = trial.suggest_int("maxThreshold", 0, 255)
-    params.thresholdStep = trial.suggest_float("thresholdStep", 0, 50)
+    params.maxThreshold = trial.suggest_int("maxThreshold", 1, 100)
+    params.thresholdStep = trial.suggest_float("thresholdStep", 0, 10)
     params.filterByArea = True
     params.minArea = 100
     params.maxArea = 1000
     params.filterByColor = True
     params.blobColor = 0
     params.filterByCircularity = True
-    params.minCircularity = trial.suggest_float("minCircularity", 0, 1)
+    params.minCircularity = trial.suggest_float("minCircularity", 0, 0.5)
     params.filterByConvexity = True
     params.minConvexity = trial.suggest_float("minConvexity", 0, 1)
     params.filterByInertia = True
-    params.minInertiaRatio = trial.suggest_float("minInertiaRatio", 0, 1)
+    params.minInertiaRatio = trial.suggest_float("minInertiaRatio", 0, 0.3)
 
     detector = cv.SimpleBlobDetector_create(params) # Creates detector object
 
@@ -82,10 +85,19 @@ def tuning(
 metadata_path=r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925\FromPDF"
 preprocess_path=r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925\Preprocessing\Training"
 
-study = optuna.create_study(direction="minimize")
+optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+
+study_name = f"study_{date.today()}_3"
+storage_name = "sqlite:///{}.db".format(study_name)
+
+study = optuna.create_study(
+    storage=storage_name,
+    study_name=study_name,
+    direction="minimize"
+    )
 
 study.optimize(
-    lambda trial: tuning(trial, metadata_path, preprocess_path), n_trials=50, n_jobs=-1
+    lambda trial: tuning(trial, metadata_path, preprocess_path), n_trials=2000, n_jobs=-1
 )
 
 print("Best parameters:", study.best_params)
