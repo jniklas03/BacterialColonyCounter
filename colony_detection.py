@@ -26,8 +26,8 @@ def detect_colonies(
     params = cv.SimpleBlobDetector_Params() # Values from hyperparameter tuning
 
     params.minThreshold = 0
-    params.maxThreshold = 64 # Smaller values = less false positives
-    params.thresholdStep = 2.975050229896966 # Smaller values = more true positives
+    params.maxThreshold = 96 # Smaller values = less false positives
+    params.thresholdStep = 5.3943585868546915 # Smaller values = more true positives
 
     params.filterByArea = True # Area in pxs
     params.minArea = 100 # Generous values
@@ -37,13 +37,13 @@ def detect_colonies(
     params.blobColor = 0 # Accepts dark/black colonies after preprocessing
 
     params.filterByCircularity = True
-    params.minCircularity = 0.41063466457046227
+    params.minCircularity = 0.20895557940856835
 
-    params.filterByConvexity = False
-    params.minConvexity = 0.7208306409286382
+    params.filterByConvexity = True
+    params.minConvexity = 0.8019905165503702
 
     params.filterByInertia = True
-    params.minInertiaRatio = 0.11002280443338333
+    params.minInertiaRatio = 0.00610705929990651
 
     detector = cv.SimpleBlobDetector_create(params) # Creates detector object
     blobs = detector.detect(preprocessed_img) # Blobs are markers around colonies
