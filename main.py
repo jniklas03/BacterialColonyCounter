@@ -10,7 +10,8 @@ def pipeline(
         kernel_size=500, 
         save_preprocessing=False,
         save_dishes=False,
-        n_dishes = 6
+        n_dishes = 6,
+        save_yaml = False
         ):
     """
     Process image to get yield cropped dishes, with circled colonies.
@@ -63,13 +64,33 @@ def pipeline(
             tag=idx
         )
 
-    with open(os.path.join(save_path, "data.yaml"), "w") as f:
-        yaml.dump(data, f)
+    if save_yaml:
+        with open(os.path.join(save_path, "data.yaml"), "w") as f:
+            yaml.dump(data, f)
 
-# pipeline(
-#     "Sources/24.09.2025.jpg",
-#     r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925",
-#     save_dishes=True,
-#     save_preprocessing=True
-# )
 
+def mult_pipeline(
+        file_path,
+        save_path,
+        kernel_size=250, 
+        save_preprocessing=False,
+        save_dishes=False,
+        n_dishes = 6,
+        save_yaml = False
+                  ):
+    for file in os.listdir(file_path):
+        pipeline(
+            source=os.path.join(file_path, file),
+            save_path=save_path,
+            kernel_size=kernel_size,
+            save_preprocessing=save_preprocessing,
+            save_dishes=save_dishes,
+            n_dishes=n_dishes,
+            save_yaml=save_yaml
+        )
+
+    
+mult_pipeline(
+    r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925\Sources\01.10.2025",
+    r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925\Detection_test"
+    )
