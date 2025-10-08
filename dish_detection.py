@@ -19,7 +19,7 @@ def detect_dishes(
     
     Parameters
     ----------
-    img : str or np.ndarray
+    img: str or np.ndarray
         Raw image, or string of to the image path.
     gray_img: np.ndarray, optional
         Grayscale image.
@@ -31,7 +31,7 @@ def detect_dishes(
         Creates a yaml file from the metadata. Useful when running the function standalone.
     save_path: str, optional
         Path to directory where the images and metadata are saved.
-    file_name, str, optional
+    file_name: str, optional
         Name to save the dishes.
 
     Returns
@@ -108,7 +108,7 @@ def detect_dishes(
 
             if save: # saving the dishes if the flag is passed
                 os.makedirs(save_path_dish_detection, exist_ok=True)
-                cv.imwrite(os.path.join(save_path_dish_detection, f"{file_name}_dish_{idx}.png"), square_crop)
+                cv.imwrite(os.path.join(save_path_dish_detection, f"{file_name}_dish_{idx}.jpg"), square_crop)
         
         if save_metadata:
             with open(os.path.join(save_path, "dish_metadata.yaml"), "w") as f:
