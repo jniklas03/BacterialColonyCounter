@@ -1,22 +1,63 @@
 import cv2 as cv
 import numpy as np
 import os
+import yaml
+import warnings
+import logging
 
-def detect_dishes(data, file, raw_img, gray_img, save_path, n_dishes=6, save=True):
+def detect_dishes(
+        img,
+        gray_img = None,
+        n_dishes=6, 
+        save=True,
+        save_metadata = False,
+        save_path = "",
+        file_name = "dish_detection", 
+):
     """
     Detects dishes in the image and crops in around them. Returns the cropped images as a list.
     
-    Keyword arguments:
-    data -- data.yaml metadata file.
-    file -- Name of the file without the extension, so "22.09.2025" NOT "22.09.2025.jpg".
-    raw_img -- OpenCv object of the raw image, i.e. cv.imread(image).
-    gray_img -- OpenCv object of the grayscale image, i.e cv.imread(image, cv.IMREAD_GRAYSCALE).
-    save_path -- Path where the cropped dishes should be saved.
-    n_dishes -- Amount of expected dishes. If a dish isn't detected turn it up. WILL detect random stuff if set higher than necessary.
-    save -- Save the crops of the dishes?
+    Parameters
+    ----------
+    img : str or np.ndarray
+        Raw image, or string of to the image path.
+    gray_img: np.ndarray, optional
+        Grayscale image.
+    n_dishes: int, default=6
+        Amount of expected dishes.
+    save: bool, default=True
+        Whether to save the cropped dishes.
+    save_metadata: bool, default=False
+        Creates a yaml file from the metadata. Useful when running the function standalone.
+    save_path: str, optional
+        Path to directory where the images and metadata are saved.
+    file_name, str, optional
+        Name to save the dishes.
+
+    Returns
+    -------
+    list of np.ndarray
+        List of cropped dishes.
+    dict
+        Metadata
     """
     
-    save_path_dish_detection = save_path + r"\Dishes" # path for the dish crops
+    if isinstance(img, str):
+        raw_img = cv.imread(img)
+        if raw_img is None:
+            raise FileNotFoundError(f"File not found.")
+    elif isinstance(img, np.ndarray):
+        raw_img = img
+    else:
+        raise TypeError("img must be a file path or a NumPy array")
+    
+    if save and save_path is None:
+        warnings.warn(f"No specified save path. Images saved in the current directory ({os.getcwd()}) under .../Dishes.")
+
+    if gray_img is None:
+        gray_img = cv.cvtColor(raw_img, cv.COLOR_BGR2GRAY)
+
+    save_path_dish_detection = os.path.join(save_path, "Dishes") # path for the dish crops
 
     circles = cv.HoughCircles( # creates a numpy array of detected circles
         gray_img, # image, should be grayscale
@@ -29,11 +70,16 @@ def detect_dishes(data, file, raw_img, gray_img, save_path, n_dishes=6, save=Tru
         maxRadius=1000 
     )
 
+    dishes = [] # list for the cropped images
+
+    metadata = {} # initializes metadata dict
+    metadata[file_name] = {"dishes":[]}
+
+
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int") 
 
         circles = circles[:n_dishes] # limits junk output to the expected amount of dishes; the dishes should appear in the first crops
-        dishes = [] # list for the cropped images
 
         for idx, (x, y, r) in enumerate(circles, start=1): # circles defined by their x and y coordinates of their center as well as their radius; idx is used for naming the files
 
@@ -51,24 +97,26 @@ def detect_dishes(data, file, raw_img, gray_img, save_path, n_dishes=6, save=Tru
 
             dishes.append(square_crop)
 
-            if data:
-                data[file]["dishes"].append(
-                    {
-                        "id":idx,
-                        "center": [int(x), int(y)],
-                        "radius": int(r),
-                        "colony_count": None
-                    }
-                )
+            metadata[file_name]["dishes"].append(
+                {
+                    "id":idx,
+                    "center": [int(x), int(y)],
+                    "radius": int(r),
+                    "colony_count": None
+                }
+            )
 
             if save: # saving the dishes if the flag is passed
                 os.makedirs(save_path_dish_detection, exist_ok=True)
-                cv.imwrite(os.path.join(save_path_dish_detection, f"{file}_dish_{idx}.png"), square_crop)
-
-        print(f"{len(circles)} dishes detected.")
-
+                cv.imwrite(os.path.join(save_path_dish_detection, f"{file_name}_dish_{idx}.png"), square_crop)
         
-    else:
-        print("No circles detected.")
+        if save_metadata:
+            with open(os.path.join(save_path, "dish_metadata.yaml"), "w") as f:
+                yaml.dump(metadata, f)
 
-    return(dishes, data)
+        logging.info(f"{len(circles)} dishes detected.")
+
+    else:
+        warnings.warn("No dishes detected.")
+
+    return(dishes, metadata)
