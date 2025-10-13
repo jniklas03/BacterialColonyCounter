@@ -1,28 +1,48 @@
 import cv2 as cv
 import numpy as np
 import os
+import yaml
+import warnings, logging
+from inputs import read_img
 
 def detect_colonies(
-        file,
-        preprocessed_img,
-        raw_img,
-        save_path,
-        tag = 0,
+        source,
+        raw_img=None,
         save=True,
-        data=None
+        save_path = "",
+        save_metadata = False,
+        metadata=None,
+        save_coordinates=False,
+        file_name = "colonies_detected"
 ):
     """
     Detects individual colonies. 
 
-    Keyword arguments:
-    file -- Name of the file without the extension, so "22.09.2025" NOT "22.09.2025.jpg".
-    preprocessed_img -- openCV object of preprocessed image (grayscale).
-    raw_img -- openCV object of raw/initial image.
-    save_path -- Filepath where the images should be saved. The script makes different folders for different images by default.
-    tag -- Internal parameter passed by main.py for processing and naming multiple dishes. Don't change.
-    save -- Save the preprocessed images?
-    data -- data.yaml metadata file.
+    Parameters
+    ----------
+    source: str or np.ndarray
+        Preprocessed image (grayscale) or string to the image path.
+    raw_img: np.ndarray, optional
+        Initial image.
+    save: bool, default=False
+        Whether to save the image with detected colonies.
+    save_path: str, optional
+        Path to directory where the image and metadata are saved.
+    save_metadata: bool, default=False
+        Creates a yaml file from the metadata.
+    save_coordinates: bool, default=False
+        Wheter to save the coordinates of the detected colonies.
+    metadata: dict, optional
+        Metadata from dish_detection.
     """
+    img = read_img(source=source)
+
+    if raw_img is None:
+        raw_img = img
+
+    if save and not save_path:
+        warnings.warn(f"No specified save path. Images saved in the current directory ({os.getcwd()}) under ...Colonies.")
+
     params = cv.SimpleBlobDetector_Params() # Values from hyperparameter tuning
 
     params.minThreshold = 0
@@ -46,29 +66,13 @@ def detect_colonies(
     params.minInertiaRatio = 0.00610705929990651
 
     detector = cv.SimpleBlobDetector_create(params) # Creates detector object
-    blobs = detector.detect(preprocessed_img) # Blobs are markers around colonies
+    blobs = detector.detect(img) # Blobs are markers around colonies
 
     output = cv.drawKeypoints(raw_img, blobs, np.array([]), (0,255,0), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # Output = initial image with colonies marked
 
-    if data: # If metadata file present (by running from main.py) saves colony count and optionally colony cooridnates
-        dish = data[file]["dishes"][tag]
-        dish["colony_count"] = len(blobs)
-        # dish["colonies"] = [{"x": int(blob.pt[0]), "y": int(blob.pt[1]), "size": round(blob.size, 3)} for blob in blobs]
-
-
     if save: # Saving images with marked colonies
-        save_path_blob_detection = save_path + r"\Colonies"
+        save_path_blob_detection = os.path.join(save_path, "Colonies")
         os.makedirs(save_path_blob_detection, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_blob_detection, f"{file}_colonies_{tag+1}.jpg"), output)
+        cv.imwrite(os.path.join(save_path_blob_detection, f"{file_name}_c.jpg"), output)
 
-    print(f"{len(blobs)} colonies detected.")
-
-    return(data)
-
-# detect_colonies(
-#     file=os.path.splitext(os.path.basename("Sources/23.09.2025.jpg"))[0],
-#     preprocessed_img=cv.imread("Preprocessing/23.09.2025_preprocessed_1.jpg"),
-#     raw_img=cv.imread("Dishes/23.09.2025_dish_1.png"),
-#     save_path=r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925",
-#     save=False
-# )
+    logging.info(f"{len(blobs)} colonies detected in file {file_name}.")
