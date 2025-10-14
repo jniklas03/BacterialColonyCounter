@@ -2,16 +2,16 @@ import cv2 as cv
 import numpy as np
 import os
 import yaml
-import warnings, logging
+import warnings
 from inputs import read_img
 
 def detect_dishes(
         source,
         n_dishes=6, 
         save=True,
-        save_metadata = False,
         save_path = "",
         file_name = "dish_detected", 
+        metadata: dict = None
 ):
     """
     Detects dishes in the image and crops in around them. Returns the cropped images as a list.
@@ -24,12 +24,12 @@ def detect_dishes(
         Amount of expected dishes.
     save: bool, default=True
         Whether to save the cropped dishes.
-    save_metadata: bool, default=False
-        Creates a yaml file from the metadata.
     save_path: str, optional
         Path to directory where the images and metadata are saved.
     file_name: str, optional
-        Name to save the dishes.
+        Name to save the dishes as.
+    metadata: dict, optional
+        Metadata dictionary handled by main.py.
 
     Returns
     -------
@@ -60,8 +60,6 @@ def detect_dishes(
 
     dishes = [] # list for the cropped images
 
-    metadata = {file_name: {"dishes":[]}}# initializes metadata dict
-
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int") 
 
@@ -83,25 +81,22 @@ def detect_dishes(
 
             dishes.append(square_crop)
 
-            metadata[file_name]["dishes"].append(
-                {
-                    "id":idx,
-                    "center": [int(x), int(y)],
-                    "radius": int(r),
-                    "colony_count": None,
-                    "colonies": []
-                }
-            )
+            if metadata:
+                metadata[file_name][idx] = [
+                    {
+                        "center": [int(x), int(y)],
+                        "radius": int(r),
+                        "colony_count": None,
+                        # "colony_characteristics": []
+                    }]
+
+            save_name = f"{file_name}_d{idx}.jpg" if idx is not None else f"{file_name}_d.jpg"
 
             if save: # saving the dishes if the flag is passed
                 os.makedirs(save_path_dish_detection, exist_ok=True)
-                cv.imwrite(os.path.join(save_path_dish_detection, f"{file_name}_{idx}.jpg"), square_crop)
-        
-        if save_metadata:
-            with open(os.path.join(save_path, "dish_metadata.yaml"), "w") as f:
-                yaml.dump(metadata, f)
+                cv.imwrite(os.path.join(save_path_dish_detection, save_name), square_crop)
 
-        logging.info(f"{len(circles)} dishes in {file_name} detected.")
+        print(f"{len(circles)} dishes detected in file: {file_name}.")
 
     else:
         warnings.warn("No dishes detected.")

@@ -1,7 +1,7 @@
 import cv2 as cv
 import numpy as np
 import os
-import warnings, logging
+import warnings
 from inputs import read_img
 
 def preprocess(
@@ -9,7 +9,8 @@ def preprocess(
         kernel_size=250,
         save=False,
         save_path = "",
-        file_name = "preprocessed"
+        file_name = "preprocessed",
+        idx: int = None
         ):
     """
     Preprocesses input image for colony detection. Returns preprocessed image.
@@ -24,6 +25,8 @@ def preprocess(
         Whether to save the cropped dishes.
     save_path: str, optional
         Path to directory where the image is saved.
+    idx: int, optional
+        Passed by main.py if multiple dishes processed.
 
     Returns
     -------
@@ -41,10 +44,13 @@ def preprocess(
     corrected = clahe.apply(gray_img) # Applies CLAHE
     background = cv.morphologyEx(corrected, cv.MORPH_OPEN, kernel) # "Opening": Smoothes away the image drastically to form the "background". 
     corrected = cv.subtract(corrected, background) # Removes the background from the image to preserve only high contrast elements (colonies).
+    
+    save_name = f"{file_name}_p{idx}.jpg" if idx is not None else f"{file_name}_p.jpg"
+
     if save:
         save_path_preprocessing = os.path.join(save_path, "Preprocessing")
         os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, f"{file_name}_p.jpg"), corrected)
-    logging.info(f"File {file_name} preprocessed.")
+        cv.imwrite(os.path.join(save_path_preprocessing, save_name), corrected)
+    print(f"File {save_name} preprocessed.")
 
     return corrected

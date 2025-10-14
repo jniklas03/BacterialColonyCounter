@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 import os
 import yaml
-import warnings, logging
+import warnings
 from inputs import read_img
 
 def detect_colonies(
@@ -10,10 +10,9 @@ def detect_colonies(
         raw_img=None,
         save=True,
         save_path = "",
-        save_metadata = False,
-        metadata=None,
-        save_coordinates=False,
-        file_name = "colonies_detected"
+        file_name = "colonies_detected",
+        metadata: dict = None,
+        idx: int = None
 ):
     """
     Detects individual colonies. 
@@ -28,12 +27,17 @@ def detect_colonies(
         Whether to save the image with detected colonies.
     save_path: str, optional
         Path to directory where the image and metadata are saved.
-    save_metadata: bool, default=False
-        Creates a yaml file from the metadata.
-    save_coordinates: bool, default=False
-        Wheter to save the coordinates of the detected colonies.
+    file_name: str, optional
+        File name for the image with the detected colonies.
     metadata: dict, optional
-        Metadata from dish_detection.
+        Metadata dictionary handled by main.py.
+    idx: int, optional
+        Passed by main.py if multiple dishes processed.
+
+    Returns
+    -------
+    dict
+        Metadata
     """
     img = read_img(source=source)
 
@@ -70,9 +74,17 @@ def detect_colonies(
 
     output = cv.drawKeypoints(raw_img, blobs, np.array([]), (0,255,0), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # Output = initial image with colonies marked
 
+    if metadata is not None and idx is not None:
+        metadata[file_name][idx][0]["colony_count"] = len(blobs)
+
+
+    save_name = f"{file_name}_c{idx}.jpg" if idx is not None else f"{file_name}_c.jpg"
+
     if save: # Saving images with marked colonies
         save_path_blob_detection = os.path.join(save_path, "Colonies")
         os.makedirs(save_path_blob_detection, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_blob_detection, f"{file_name}_c.jpg"), output)
+        cv.imwrite(os.path.join(save_path_blob_detection, save_name), output)
 
-    logging.info(f"{len(blobs)} colonies detected in file {file_name}.")
+    print(f"{len(blobs)} colonies detected in file {save_name}.")
+
+    return metadata
