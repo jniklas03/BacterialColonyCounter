@@ -7,7 +7,7 @@ import logging
 import sys
 from datetime import date
 
-def tuning(
+def blob_tuning(
         trial,
         metadata_path,
         preprocess_path
@@ -97,7 +97,7 @@ study = optuna.create_study(
     )
 
 study.optimize(
-    lambda trial: tuning(trial, metadata_path, preprocess_path), n_trials=2000, n_jobs=-1
+    lambda trial: blob_tuning(trial, metadata_path, preprocess_path), n_trials=2000, n_jobs=-1
 )
 
 print("Best parameters:", study.best_params)
