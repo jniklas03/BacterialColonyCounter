@@ -85,20 +85,32 @@ def blob_tuning(
 metadata_path=r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925\FromPDF"
 preprocess_path=r"C:\Users\jakub\Documents\Bachelorarbeit\Code\160925\Preprocessing\Training"
 
-optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
+def run_tuning(
+        objective_func,
+        metadata_path,
+        preprocess_path,
+        study_tag,
+        n_trials=2000,
+        n_jobs=-1
+):
+    optuna.logging.get_logger("optuna").addHandler(logging.StreamHandler(sys.stdout))
 
-study_name = f"study_{date.today()}_3"
-storage_name = "sqlite:///{}.db".format(study_name)
+    study_name = f"study_{study_tag}_{date.today()}"
+    storage_name = f"sqlite:///{study_name}.db"
 
-study = optuna.create_study(
-    storage=storage_name,
-    study_name=study_name,
-    direction="minimize"
+    study = optuna.create_study(
+        storage=storage_name,
+        study_name=study_name,
+        direction="minimize"
+        )
+
+    study.optimize(
+        lambda trial: objective_func(trial, metadata_path, preprocess_path), 
+        n_trials=n_trials,
+        n_jobs=n_jobs
     )
 
-study.optimize(
-    lambda trial: blob_tuning(trial, metadata_path, preprocess_path), n_trials=2000, n_jobs=-1
-)
+    print("Best parameters:", study.best_params)
+    print(f"Best score (%): {study.best_value * 100:.2f}")
 
-print("Best parameters:", study.best_params)
-print("Best score in %:", study.best_value*100)
+    return study.best_params

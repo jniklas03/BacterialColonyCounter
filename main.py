@@ -3,8 +3,8 @@ import numpy as np
 import os
 import yaml
 from dish_detection import detect_dishes
-from preprocessing import preprocess
-from colony_detection import detect_colonies
+from preprocessing_stills import preprocess
+from counting_stills import detect_colonies
 
 def pipeline(
         source,
