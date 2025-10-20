@@ -90,8 +90,9 @@ def detect_dishes(
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int") 
 
+        circles = sort_circles(circles, row_tolerance=150)
+        
         if debug:
-            circles = sort_circles(circles, row_tolerance=150)
             debug_img = flipped.copy()
 
         for idx, (x, y, r) in enumerate(circles, start=1): # circles defined by their x and y coordinates of their center as well as their radius; idx is used for naming the files
@@ -136,7 +137,7 @@ def detect_dishes(
 
         if debug: # saves debug image
             os.makedirs(save_path_dish_detection, exist_ok=True)
-            cv.imwrite(save_path_dish_detection, debug_img)
+            cv.imwrite(os.path.join(save_path_dish_detection, "debug.jpg"), debug_img)
 
     else:
         warnings.warn("No dishes detected.")
