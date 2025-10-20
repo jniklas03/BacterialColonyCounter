@@ -5,13 +5,36 @@ import yaml
 import warnings
 from inputs import read_img
 
+def sort_circles(circles, row_tolerance=100):
+    """
+    Sorts circles from top left to bottom right.
+    """
+    circles = sorted(circles, key=lambda c: c[1])
+
+    rows = []
+    current_row = [circles[0]]
+
+    for c in circles[1:]:
+        if abs(c[1] - current_row[-1][1]) < row_tolerance:
+            current_row.append(c)
+        else:
+            rows.append(current_row)
+            current_row = [c]
+    rows.append(current_row)
+
+    for row in rows:
+        row.sort(key=lambda c: c[0])
+    sorted_circles = [c for row in rows for c in row]
+    return sorted_circles
+
 def detect_dishes(
         source,
         n_dishes=6, 
         save=True,
         save_path = "",
         file_name = "dish_detected", 
-        metadata: dict = None
+        metadata: dict = None,
+        debug = False
 ):
     """
     Detects dishes in the image and crops in around them. Returns the cropped images as a list.
@@ -30,6 +53,8 @@ def detect_dishes(
         Name to save the dishes as.
     metadata: dict, optional
         Metadata dictionary handled by main.py.
+    debug: bool, default=False
+        Whether to save the input image with numbered circles for debugging.
 
     Returns
     -------
@@ -40,22 +65,25 @@ def detect_dishes(
     """
     
     img = read_img(source=source)
-    gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    
-    if save and not save_path:
+    flipped = cv.flip(img, -1) # incubator images "upside down", flips right side up
+    gray_img = cv.cvtColor(flipped, cv.COLOR_BGR2GRAY)
+
+    if (save and not save_path) or (debug and not save_path):
         warnings.warn(f"No specified save path. Images saved in the current directory ({os.getcwd()}) under ...Dishes.")
 
-    save_path_dish_detection = os.path.join(save_path, "Dishes") # path for the dish crops
+    save_path_dish_detection = os.path.join(save_path, "Dishes") # path for dish crops
+
+    blur = cv.medianBlur(gray_img, 21) # blur so that hough circles doesn't detect random stuff
 
     circles = cv.HoughCircles( # creates a numpy array of detected circles
-        gray_img, # image, should be grayscale
+        blur, # image, should be grayscale
         cv.HOUGH_GRADIENT, # detection method
-        dp=1.2, # resolution used for the detection; dp=2 means half resolution of the original image
-        minDist=900, # minimum distance between the centers of circles in px
-        param1=100, # upper threshold for canny edge detection (uses canny edge detection internally)
-        param2=30, # threshold for center detection; lower values are more sensitive, but prone to false positves
-        minRadius=400, # minimum and maxmimum radius in px; both set very generously due to problems with detection
-        maxRadius=1000 
+        dp=3, # resolution used for the detection; dp=2 means half resolution of the original image
+        minDist=200, # minimum distance between the centers of circles in px
+        param1=125, # upper threshold for canny edge detection (uses canny edge detection internally)
+        param2=125, # threshold for center detection, turn this up if non-dishes are detected
+        minRadius=400, # minimum and maxmimum radius in px
+        maxRadius=600 
     )
 
     dishes = [] # list for the cropped images
@@ -63,20 +91,29 @@ def detect_dishes(
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int") 
 
-        circles = circles[:n_dishes] # limits junk output to the expected amount of dishes; the dishes should appear in the first crops
+        if debug:
+            circles = sort_circles(circles, row_tolerance=150)
+            debug_img = flipped.copy()
 
         for idx, (x, y, r) in enumerate(circles, start=1): # circles defined by their x and y coordinates of their center as well as their radius; idx is used for naming the files
 
+            if debug:
+                cv.circle(debug_img, (x, y), r, (0, 255, 0), 4)  # draws outline
+                cv.circle(debug_img, (x, y), 10, (0, 0, 255), -1)  # draws center point
+                cv.putText( # draws number label
+                    debug_img, str(idx), (x - 40, y - 40), cv.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 3
+                    )
+                
             mask = np.zeros_like(gray_img) # mask (black image) the size of the input image
             cv.circle(mask, (x, y), r, 255, -1) # fills the mask with white circles at the location of the detected dishes
 
             masked_img = cv.bitwise_and(  # applies mask (keeps values where the mask is white) to original image
-                img, 
-                img, 
+                flipped, 
+                flipped, 
                 mask=mask)
 
             x1, y1 = max(0, x-r), max(0, y-r) # defines top left corner of the crop
-            x2, y2 = min(img.shape[1], x+r), min(img.shape[0], y+r) # defines bottom right corner of the crop
+            x2, y2 = min(flipped.shape[1], x+r), min(flipped.shape[0], y+r) # defines bottom right corner of the crop
             square_crop = masked_img[y1:y2, x1:x2] # applies a square crop for the masked dishes
 
             dishes.append(square_crop)
@@ -97,6 +134,10 @@ def detect_dishes(
                 cv.imwrite(os.path.join(save_path_dish_detection, save_name), square_crop)
 
         print(f"{len(circles)} dishes detected in file: {file_name}.")
+        # 🔹 Save or display the debug visualization
+        debug_path = os.path.join(save_path_dish_detection, "detected_circles_debug.jpg")
+        os.makedirs(save_path_dish_detection, exist_ok=True)
+        cv.imwrite(debug_path, debug_img)
 
     else:
         warnings.warn("No dishes detected.")
