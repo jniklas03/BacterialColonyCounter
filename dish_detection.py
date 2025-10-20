@@ -1,7 +1,6 @@
 import cv2 as cv
 import numpy as np
 import os
-import yaml
 import warnings
 from inputs import read_img
 
@@ -134,10 +133,10 @@ def detect_dishes(
                 cv.imwrite(os.path.join(save_path_dish_detection, save_name), square_crop)
 
         print(f"{len(circles)} dishes detected in file: {file_name}.")
-        # 🔹 Save or display the debug visualization
-        debug_path = os.path.join(save_path_dish_detection, "detected_circles_debug.jpg")
-        os.makedirs(save_path_dish_detection, exist_ok=True)
-        cv.imwrite(debug_path, debug_img)
+
+        if debug: # saves debug image
+            os.makedirs(save_path_dish_detection, exist_ok=True)
+            cv.imwrite(save_path_dish_detection, debug_img)
 
     else:
         warnings.warn("No dishes detected.")
