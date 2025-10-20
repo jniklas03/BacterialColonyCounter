@@ -6,7 +6,7 @@ from inputs import read_img
 
 def preprocess(
         source,
-        kernel_size=250,
+        kernel_size = 500,
         save=False,
         save_path = "",
         file_name = "preprocessed",
@@ -33,24 +33,28 @@ def preprocess(
     np.ndarray
         Preprocessed dish.
     """
-    gray_img = cv.cvtColor(read_img(source=source), cv.COLOR_BGR2GRAY)
+    img = read_img(source=source)
 
     if save and not save_path:
         warnings.warn(f"No specified save path. Images saved in the current directory ({os.getcwd()}) under ...Preprocessing.")
 
-    clahe = cv.createCLAHE(clipLimit=2.0, tileGridSize=(8,8)) # Creates CLAHE object
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size)) # Passing the kernel_size as an ellipse
+    # gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
-    corrected = clahe.apply(gray_img) # Applies CLAHE
-    background = cv.morphologyEx(corrected, cv.MORPH_OPEN, kernel) # "Opening": Smoothes away the image drastically to form the "background". 
-    corrected = cv.subtract(corrected, background) # Removes the background from the image to preserve only high contrast elements (colonies).
-    
+    green_channel = img[:, :, 1]
+
+    blur = cv.medianBlur(green_channel, 5)
+
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
+
+    tophat = cv.morphologyEx(blur, cv.MORPH_TOPHAT, kernel)
+
+    _, th = cv.threshold(tophat, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
     save_name = f"{file_name}_p{idx}.jpg" if idx is not None else f"{file_name}_p.jpg"
 
     if save:
         save_path_preprocessing = os.path.join(save_path, "Preprocessing")
         os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, save_name), corrected)
+        cv.imwrite(os.path.join(save_path_preprocessing, save_name), th)
     print(f"File {save_name} preprocessed.")
 
-    return corrected
+    return th
