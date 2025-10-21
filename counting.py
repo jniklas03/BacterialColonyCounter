@@ -1,7 +1,6 @@
 import cv2 as cv
 import numpy as np
 import os
-import yaml
 import warnings
 from inputs import read_img
 
