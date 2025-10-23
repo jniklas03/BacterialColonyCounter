@@ -57,7 +57,7 @@ def detect_colonies(
     params.maxArea = 1000
 
     params.filterByColor = True
-    params.blobColor = 0 # Accepts dark/black colonies after preprocessing
+    params.blobColor = 255 # Accepts dark/black colonies after preprocessing
 
     params.filterByCircularity = True
     params.minCircularity = 0.20895557940856835
