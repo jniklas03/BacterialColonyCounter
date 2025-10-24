@@ -8,7 +8,6 @@ from counting import detect_colonies
 
 def pipeline(
         source,
-        n_dishes = 6,
         kernel_size=500, 
         save_path = "",
         save_metadata=False,
@@ -23,8 +22,6 @@ def pipeline(
     ----------
     source: str
         Filepath to the image file of the petri dishes with the colonies.
-    n_dishes: int, optional
-        Amount of expected dishes.
     kernel_size: int, optional
         Kernel size for opening; higher number yields more smoothed, generally better results, but takes longer.
     save_path: str, optional
@@ -49,7 +46,6 @@ def pipeline(
 
     dishes, masks, dish_metadata = detect_dishes(
         source=img,
-        n_dishes=n_dishes,
         save=save_dishes,
         save_path=save_path,
         file_name=file_name,
