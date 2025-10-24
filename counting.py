@@ -77,7 +77,7 @@ def detect_colonies(
         metadata[file_name][idx][0]["colony_count"] = len(blobs)
 
 
-    save_name = f"{file_name}_c{idx}.jpg" if idx is not None else f"{file_name}_c.jpg"
+    save_name = f"{file_name}_c{idx}.png" if idx is not None else f"{file_name}_c.png"
 
     if save: # Saving images with marked colonies
         save_path_blob_detection = os.path.join(save_path, "Colonies")
