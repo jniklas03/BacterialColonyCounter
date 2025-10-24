@@ -47,7 +47,7 @@ def pipeline(
 
     metadata = {file_name: {}}
 
-    dishes, dish_metadata = detect_dishes(
+    dishes, masks, dish_metadata = detect_dishes(
         source=img,
         n_dishes=n_dishes,
         save=save_dishes,
@@ -61,6 +61,7 @@ def pipeline(
     for idx, dish in enumerate(dishes):
         preprocessed.append(preprocess(
             source=dish,
+            mask=masks[idx],
             kernel_size=kernel_size,
             save=save_preprocessed,
             save_path=save_path,

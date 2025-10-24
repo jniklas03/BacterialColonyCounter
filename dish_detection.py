@@ -6,7 +6,7 @@ from inputs import read_img
 
 def sort_circles(circles, row_tolerance=100):
     """
-    Sorts circles from top left to bottom right.
+    Sorts detected dishes from top left to bottom right.
     """
     circles = sorted(circles, key=lambda c: c[1])
 
@@ -28,7 +28,6 @@ def sort_circles(circles, row_tolerance=100):
 
 def detect_dishes(
         source,
-        n_dishes=6, 
         save=True,
         save_path = "",
         file_name = "dish_detected", 
@@ -59,6 +58,8 @@ def detect_dishes(
     -------
     list of np.ndarray
         List of cropped dishes.
+    list of np.ndarray
+        List of masks
     dict
         Metadata
     """
@@ -86,6 +87,7 @@ def detect_dishes(
     )
 
     dishes = [] # list for the cropped images
+    masks = [] # list for masks
 
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int") 
@@ -104,8 +106,8 @@ def detect_dishes(
                     debug_img, str(idx), (x - 40, y - 40), cv.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 3
                     )
                 
-            mask = np.zeros_like(gray_img) # mask (black image) the size of the input image
-            cv.circle(mask, (x, y), r, 255, -1) # fills the mask with white circles at the location of the detected dishes
+            mask = np.full_like(gray_img, 0) # mask (black image) the size of the input image
+            cv.circle(mask, (x, y), r, 255, -1) # fills the mask with a white circle at the location of the detected dish
 
             masked_img = cv.bitwise_and(  # applies mask (keeps values where the mask is white) to original image
                 flipped, 
@@ -114,9 +116,12 @@ def detect_dishes(
 
             x1, y1 = max(0, x-r), max(0, y-r) # defines top left corner of the crop
             x2, y2 = min(flipped.shape[1], x+r), min(flipped.shape[0], y+r) # defines bottom right corner of the crop
+
             square_crop = masked_img[y1:y2, x1:x2] # applies a square crop for the masked dishes
+            mask_crop = mask[y1:y2, x1:x2] # crops the masks
 
             dishes.append(square_crop)
+            masks.append(mask_crop)
 
             if metadata:
                 metadata[file_name][idx] = [
@@ -127,7 +132,7 @@ def detect_dishes(
                         # "colony_characteristics": []
                     }]
 
-            save_name = f"{file_name}_d{idx}.jpg" if idx is not None else f"{file_name}_d.jpg"
+            save_name = f"{file_name}_d{idx}.png" if idx is not None else f"{file_name}_d.png"
 
             if save: # saving the dishes if the flag is passed
                 os.makedirs(save_path_dish_detection, exist_ok=True)
@@ -137,9 +142,9 @@ def detect_dishes(
 
         if debug: # saves debug image
             os.makedirs(save_path_dish_detection, exist_ok=True)
-            cv.imwrite(os.path.join(save_path_dish_detection, "debug.jpg"), debug_img)
+            cv.imwrite(os.path.join(save_path_dish_detection, "debug.png"), debug_img)
 
     else:
         warnings.warn("No dishes detected.")
 
-    return dishes, metadata
+    return dishes, masks, metadata
