@@ -86,4 +86,4 @@ def detect_colonies(
 
     print(f"{len(blobs)} colonies detected in file {save_name}.")
 
-    return metadata
+    return len(blobs), metadata
