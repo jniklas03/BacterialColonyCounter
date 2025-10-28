@@ -109,20 +109,21 @@ def preprocess(
     _, threshold = cv.threshold(tophat, 0, 255, cv.THRESH_BINARY_INV + cv.THRESH_OTSU)
 
     if mask is not None:
-        threshold = cv.bitwise_and(threshold, threshold, mask=mask)
+        threshold = cv.bitwise_and(threshold, threshold, mask)
 
     save_name = f"{file_name}_p{idx}.png" if idx is not None else f"{file_name}_p.png"
 
     if save:
         save_path_preprocessing = os.path.join(save_path, "Preprocessing")
         os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, save_name), threshold)
+        cv.imwrite(os.path.join(save_path_preprocessing, save_name), tophat)
     print(f"File {save_name} preprocessed.")
 
     return threshold
 
 def preprocess_small(
         source,
+        mask,
         kernel_size = 21,
         s = 121,
         C = 11,
@@ -163,7 +164,7 @@ def preprocess_small(
 
     blackhat = cv.morphologyEx(green_channel, cv.MORPH_BLACKHAT, kernel)
 
-    th = cv.adaptiveThreshold(
+    threshold = cv.adaptiveThreshold(
         src=blackhat,
         maxValue=255,
         adaptiveMethod=cv.ADAPTIVE_THRESH_GAUSSIAN_C,
@@ -171,12 +172,16 @@ def preprocess_small(
         blockSize=s,
         C=C
     )
+
+    if mask is not None:
+        threshold = cv.bitwise_and(threshold, threshold, mask)
+
     save_name = f"{file_name}_p{idx}.png" if idx is not None else f"{file_name}_p.png"
 
     if save:
         save_path_preprocessing = os.path.join(save_path, "Preprocessing")
         os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, save_name), th)
+        cv.imwrite(os.path.join(save_path_preprocessing, save_name), threshold)
     print(f"File {save_name} preprocessed.")
 
-    return th
+    return threshold
