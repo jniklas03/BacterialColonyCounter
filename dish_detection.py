@@ -26,6 +26,34 @@ def sort_circles(circles, row_tolerance=100):
     sorted_circles = [c for row in rows for c in row]
     return sorted_circles
 
+def crop(image, coordinates, flip=True):
+    dishes = [] # list for the cropped images
+    masks = [] # list for masks
+
+    img = read_img(image)
+    if flip:
+        img = cv.flip(img, -1)
+
+    for (x, y, r) in coordinates:
+        mask = np.zeros(img.shape[:2], dtype=np.uint8) # mask (black image) the size of the input image
+        cv.circle(mask, (x, y), r, 255, -1) # fills the mask with a white circle at the location of the coordinates (detected dish)
+
+        masked_img = cv.bitwise_and(  # applies mask (keeps values where the mask is white) to original image
+            img, 
+            img, 
+            mask=mask)
+
+        x1, y1 = max(0, x-r), max(0, y-r) # defines top left corner of the crop
+        x2, y2 = min(img.shape[1], x+r), min(img.shape[0], y+r) # defines bottom right corner of the crop
+
+        square_crop = masked_img[y1:y2, x1:x2] # applies a square crop for the masked dishes
+        mask_crop = mask[y1:y2, x1:x2] # crops the masks
+
+        dishes.append(square_crop)
+        masks.append(mask_crop)
+        
+    return dishes, masks
+
 def detect_dishes(
         source,
         save=True,
@@ -63,7 +91,8 @@ def detect_dishes(
     dict
         Metadata
     """
-    
+    dishes, masks, coordinates = [], [], []
+
     img = read_img(source=source)
     flipped = cv.flip(img, -1) # incubator images "upside down", flips right side up
     gray_img = cv.cvtColor(flipped, cv.COLOR_BGR2GRAY)
@@ -79,72 +108,52 @@ def detect_dishes(
         blur, # image, should be grayscale
         cv.HOUGH_GRADIENT, # detection method
         dp=3, # resolution used for the detection; dp=2 means half resolution of the original image
-        minDist=200, # minimum distance between the centers of circles in px
+        minDist=800, # minimum distance between the centers of circles in px
         param1=125, # upper threshold for canny edge detection (uses canny edge detection internally)
-        param2=125, # threshold for center detection, turn this up if non-dishes are detected
+        param2=70, # threshold for center detection, turn this up if non-dishes are detected
         minRadius=400, # minimum and maxmimum radius in px
         maxRadius=600 
     )
 
-    dishes = [] # list for the cropped images
-    masks = [] # list for masks
-
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int") 
-
         circles = sort_circles(circles, row_tolerance=150)
-        
+
+        coordinates = [(x, y, r) for (x, y, r) in circles]
+        dishes, masks = crop(flipped, coordinates, flip=False)
+
         if debug:
             debug_img = flipped.copy()
-
-        for idx, (x, y, r) in enumerate(circles, start=1): # circles defined by their x and y coordinates of their center as well as their radius; idx is used for naming the files
-
-            if debug:
+            for idx, (x,y,r) in enumerate(coordinates, start=1):
                 cv.circle(debug_img, (x, y), r, (0, 255, 0), 4)  # draws outline
                 cv.circle(debug_img, (x, y), 10, (0, 0, 255), -1)  # draws center point
                 cv.putText( # draws number label
-                    debug_img, str(idx), (x - 40, y - 40), cv.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 3
-                    )
-                
-            mask = np.full_like(gray_img, 0) # mask (black image) the size of the input image
-            cv.circle(mask, (x, y), r, 255, -1) # fills the mask with a white circle at the location of the detected dish
+                    debug_img, str(idx), (x - 40, y - 40), cv.FONT_HERSHEY_SIMPLEX, 2, (255, 0, 0), 3)
 
-            masked_img = cv.bitwise_and(  # applies mask (keeps values where the mask is white) to original image
-                flipped, 
-                flipped, 
-                mask=mask)
-
-            x1, y1 = max(0, x-r), max(0, y-r) # defines top left corner of the crop
-            x2, y2 = min(flipped.shape[1], x+r), min(flipped.shape[0], y+r) # defines bottom right corner of the crop
-
-            square_crop = masked_img[y1:y2, x1:x2] # applies a square crop for the masked dishes
-            mask_crop = mask[y1:y2, x1:x2] # crops the masks
-
-            dishes.append(square_crop)
-            masks.append(mask_crop)
-
+        for idx, (dish, mask) in enumerate(zip(dishes, masks), start=1): # circles defined by their x and y coordinates of their center as well as their radius; idx is used for naming the files
             if metadata:
-                metadata[file_name][idx] = [
-                    {
-                        "center": [int(x), int(y)],
-                        "radius": int(r),
-                        "colony_count": None,
-                        # "colony_characteristics": []
-                    }]
+                x, y, r = coordinates[idx-1]
+                metadata[file_name][idx] = [{
+                    "center": [int(x), int(y)],
+                    "radius": int(r),
+                    "colony_count": None,
+                }]
+
 
             save_name = f"{file_name}_d{idx}.png" if idx is not None else f"{file_name}_d.png"
 
             if save: # saving the dishes if the flag is passed
                 os.makedirs(save_path_dish_detection, exist_ok=True)
-                cv.imwrite(os.path.join(save_path_dish_detection, save_name), square_crop)
+                cv.imwrite(os.path.join(save_path_dish_detection, save_name), dish)
 
         print(f"{len(circles)} dishes detected in file: {file_name}.")
 
         if debug: # saves debug image
             os.makedirs(save_path_dish_detection, exist_ok=True)
-            cv.imwrite(os.path.join(save_path_dish_detection, "debug.png"), debug_img)
+            cv.imwrite(os.path.join(save_path_dish_detection, f"{file_name}_debug.png"), debug_img)
 
     else:
         warnings.warn("No dishes detected.")
 
-    return dishes, masks, metadata
+    return dishes, masks, coordinates, metadata
+
