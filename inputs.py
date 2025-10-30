@@ -30,3 +30,18 @@ def read_time(filename):
 
     day, month, year, hour, minute, second = map(int, match.groups())
     return datetime(year, month, day, hour, minute, second)
+
+def read_image_paths(source):
+    if not isinstance(source, str) or not os.path.isdir(source):
+        raise TypeError("source_directory must be a directory path.")
+    
+    image_paths = []
+    base_names = []
+
+    for img in sorted(os.listdir(source)):
+        full_path = os.path.join(source, img)
+        if os.path.isfile(full_path):
+            image_paths.append(full_path)
+            base_names.append(os.path.splitext(img)[0])
+
+    return image_paths, base_names
