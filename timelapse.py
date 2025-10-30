@@ -18,7 +18,7 @@ def make_foreground_masks(
         save=False
     )
 
-    file_name = os.path.splitext(os.path.basename(last_image_path))
+    file_name = os.path.splitext(os.path.basename(last_image_path))[0]
     foreground_masks = [preprocess(source=dish, mask=mask, file_name=file_name, kernel_size=500) for dish, mask in zip(dishes, masks)]
 
     if save:
