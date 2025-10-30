@@ -117,7 +117,7 @@ def mult_pipeline(
 
 def timelapse_pipeline(
         source,
-        save,
+        save = False,
         save_path = "",
         n_to_stack=5
 ):
@@ -136,7 +136,7 @@ def timelapse_pipeline(
         preprocessed_imgs = []
 
         for idx, (dish, mask) in enumerate(zip(dishes, masks)):
-            preprocessed = preprocess_small(source=dish, mask=mask, file_name=file_name, save=False, save_path=save_path)
+            preprocessed = preprocess_small(source=dish, mask=mask, file_name=file_name, save=save, save_path=save_path)
 
             mask_applied = cv.bitwise_and(preprocessed, preprocessed, mask=fg_masks[idx])
             if save:
