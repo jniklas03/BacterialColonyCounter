@@ -4,7 +4,7 @@ import os
 import warnings
 from inputs import read_img
 
-def _sort_circles(circles, row_tolerance=100):
+def sort_circles(circles, row_tolerance=100):
     """
     Sorts detected dishes from top left to bottom right.
 
@@ -37,7 +37,7 @@ def _sort_circles(circles, row_tolerance=100):
     sorted_circles = [c for row in rows for c in row]
     return sorted_circles
 
-def _crop(image, coordinates):
+def crop(image, coordinates):
     """
     Crops around dishes in an image.
     
@@ -143,10 +143,10 @@ def detect_dishes(
 
     if circles is not None:
         circles = np.round(circles[0, :]).astype("int") 
-        circles = _sort_circles(circles, row_tolerance=150)
+        circles = sort_circles(circles, row_tolerance=150)
 
         coordinates = [(x, y, r) for (x, y, r) in circles]
-        dishes, masks = _crop(img, coordinates)
+        dishes, masks = crop(img, coordinates)
 
         if debug:
             debug_img = img.copy()
