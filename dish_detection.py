@@ -26,13 +26,11 @@ def sort_circles(circles, row_tolerance=100):
     sorted_circles = [c for row in rows for c in row]
     return sorted_circles
 
-def crop(image, coordinates, flip=True):
+def crop(image, coordinates):
     dishes = [] # list for the cropped images
     masks = [] # list for masks
 
     img = read_img(image)
-    if flip:
-        img = cv.flip(img, -1)
 
     for (x, y, r) in coordinates:
         mask = np.zeros(img.shape[:2], dtype=np.uint8) # mask (black image) the size of the input image
@@ -94,8 +92,7 @@ def detect_dishes(
     dishes, masks, coordinates = [], [], []
 
     img = read_img(source=source)
-    flipped = cv.flip(img, -1) # incubator images "upside down", flips right side up
-    gray_img = cv.cvtColor(flipped, cv.COLOR_BGR2GRAY)
+    gray_img = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
 
     if (save and not save_path) or (debug and not save_path):
         warnings.warn(f"No specified save path. Images saved in the current directory ({os.getcwd()}) under ...Dishes.")
@@ -120,10 +117,10 @@ def detect_dishes(
         circles = sort_circles(circles, row_tolerance=150)
 
         coordinates = [(x, y, r) for (x, y, r) in circles]
-        dishes, masks = crop(flipped, coordinates, flip=False)
+        dishes, masks = crop(img, coordinates)
 
         if debug:
-            debug_img = flipped.copy()
+            debug_img = img.copy()
             for idx, (x,y,r) in enumerate(coordinates, start=1):
                 cv.circle(debug_img, (x, y), r, (0, 255, 0), 4)  # draws outline
                 cv.circle(debug_img, (x, y), 10, (0, 0, 255), -1)  # draws center point
