@@ -124,12 +124,10 @@ def preprocess(
 def preprocess_small(
         source,
         mask,
-        kernel_size = 21,
         s = 121,
         C = 11,
-        clip_limit = 2.0,
-        tile_size = 8,
-        min_area = 50,
+        kernel_size = 3,
+        min_area = 5,
         max_area = 200,
         save=False,
         save_path = "",
@@ -145,11 +143,8 @@ def preprocess_small(
 
     green_channel = img[:, :, 1]
 
-    clahe_object = cv.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile_size, tile_size))
-    clahed = clahe_object.apply(green_channel)
-
     threshold = cv.adaptiveThreshold(
-        src=clahed,
+        src=green_channel,
         maxValue=255,
         adaptiveMethod=cv.ADAPTIVE_THRESH_GAUSSIAN_C,
         thresholdType=cv.THRESH_BINARY_INV,
@@ -165,6 +160,9 @@ def preprocess_small(
         if min_area <= area <= max_area:
             filtered[labels == i] = 255
 
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
+    eroded = cv.morphologyEx(filtered, cv.MORPH_ERODE, kernel)
+
     if mask is not None:
         filtered = cv.bitwise_and(filtered, filtered, mask=mask)
 
@@ -173,7 +171,7 @@ def preprocess_small(
     if save:
         save_path_preprocessing = os.path.join(save_path, "Preprocessing")
         os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, save_name), filtered)
+        cv.imwrite(os.path.join(save_path_preprocessing, save_name), eroded)
     print(f"File {save_name} preprocessed.")
 
     return filtered
