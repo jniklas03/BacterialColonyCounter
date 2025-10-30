@@ -49,24 +49,24 @@ def detect_colonies(
     params = cv.SimpleBlobDetector_Params() # Values from hyperparameter tuning
 
     params.minThreshold = 0
-    params.maxThreshold = 96 # Smaller values = less false positives
-    params.thresholdStep = 5.3943585868546915 # Smaller values = more true positives
+    params.maxThreshold = 255 # Smaller values = less false positives
+    params.thresholdStep = 2 # Smaller values = more true positives
 
     params.filterByArea = True # Area in pxs
-    params.minArea = 100 # Generous values
-    params.maxArea = 1000
+    params.minArea = 2 # Generous values
+    params.maxArea = 100
 
     params.filterByColor = True
-    params.blobColor = 255 # Accepts dark/black colonies after preprocessing
+    params.blobColor = 255 # Detects white colonies
 
     params.filterByCircularity = True
-    params.minCircularity = 0.20895557940856835
+    params.minCircularity = 0.2
 
     params.filterByConvexity = True
-    params.minConvexity = 0.8019905165503702
+    params.minConvexity = 0.9
 
     params.filterByInertia = True
-    params.minInertiaRatio = 0.00610705929990651
+    params.minInertiaRatio = 0.1
 
     detector = cv.SimpleBlobDetector_create(params) # Creates detector object
     blobs = detector.detect(img) # Blobs are markers around colonies
@@ -86,4 +86,4 @@ def detect_colonies(
 
     print(f"{len(blobs)} colonies detected in file {save_name}.")
 
-    return len(blobs), metadata
+    return len(blobs), output, metadata
