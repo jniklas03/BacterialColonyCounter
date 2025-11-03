@@ -4,9 +4,8 @@ import os
 import yaml
 from inputs import read_time, read_image_paths
 from dish_detection import detect_dishes, crop
-from preprocessing import preprocess, preprocess_small
+from preprocessing import *
 from counting import detect_colonies
-from timelapse import *
 
 def pipeline(
         source,
