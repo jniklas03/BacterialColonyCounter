@@ -19,7 +19,6 @@ def read_time(filename):
     Extracts datetime from image filenames, i.e. '01.10.2025-17.40.02.jpg'
     Returns datetime object, or None if pattern not found.
     """
-    # get just the filename, remove extension
     basename = os.path.basename(filename)
     name, _ = os.path.splitext(basename)
 
