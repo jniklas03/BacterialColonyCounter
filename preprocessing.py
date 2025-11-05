@@ -32,7 +32,7 @@ def preprocess(
     Parameters
     ----------
     source: str or np.ndarray
-        Image of dish, or string of to the image path.
+        Image of dish, or string to the image path.
     mask: np.ndarray, optional
         Mask of background area outside of dish, if None the background crop won't be applied and watershedding won't work.
     fg_mask: np.ndarray, optional
