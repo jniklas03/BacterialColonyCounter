@@ -6,37 +6,40 @@ from inputs import read_img
 
 def detect_colonies(
         source,
-        raw_img=None,
-        save=True,
+        raw_img = None,
+        save = True,
         save_path = "",
         file_name = "colonies_detected",
-        metadata: dict = None,
         idx: int = None
 ):
     """
-    Detects individual colonies. 
+    Detects colonies.
+
+    Returns number of colonies, image with detected colonies and metadata.
 
     Parameters
     ----------
     source: str or np.ndarray
-        Preprocessed image (grayscale) or string to the image path.
+        Thresholded image or string to the image path.
     raw_img: np.ndarray, optional
-        Initial image.
+        Initial image, used for saving. If None, image from source will be used for visualisation.
     save: bool, default=False
         Whether to save the image with detected colonies.
     save_path: str, optional
         Path to directory where the image and metadata are saved.
     file_name: str, optional
-        File name for the image with the detected colonies.
+        File name for the saved image.
     metadata: dict, optional
-        Metadata dictionary handled by main.py.
+        Metadata dictionary handled by a wrapper function.
     idx: int, optional
-        Passed by main.py if multiple dishes processed.
+        Passed by a wrapper function when processing mutliple dishes. 
 
     Returns
     -------
-    dict
-        Metadata
+    int
+        Number of detected colonies
+    np.ndarray
+        Image with detected colonies
     """
     img = read_img(source=source)
 
@@ -50,32 +53,28 @@ def detect_colonies(
 
     params.minThreshold = 0
     params.maxThreshold = 255 # Smaller values = less false positives
-    params.thresholdStep = 2 # Smaller values = more true positives
+    params.thresholdStep = 1 # Smaller values = more true positives
 
     params.filterByArea = True # Area in pxs
-    params.minArea = 2 # Generous values
-    params.maxArea = 100
+    params.minArea = 2
+    params.maxArea = 750
 
     params.filterByColor = True
     params.blobColor = 255 # Detects white colonies
 
-    params.filterByCircularity = True
-    params.minCircularity = 0.2
+    params.filterByCircularity = True # how much does the geometrical shape fit the form of a circle
+    params.minCircularity = 0.1
 
-    params.filterByConvexity = True
-    params.minConvexity = 0.9
+    params.filterByConvexity = True # "fullness" of the circle; think of a pie chart
+    params.minConvexity = 0.85
 
-    params.filterByInertia = True
+    params.filterByInertia = True # how elongated is the circle - lower values mean more elongated.
     params.minInertiaRatio = 0.1
 
     detector = cv.SimpleBlobDetector_create(params) # Creates detector object
     blobs = detector.detect(img) # Blobs are markers around colonies
 
     output = cv.drawKeypoints(raw_img, blobs, np.array([]), (0,255,0), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # Output = initial image with colonies marked
-
-    if metadata is not None and idx is not None:
-        metadata[file_name][idx][0]["colony_count"] = len(blobs)
-
 
     save_name = f"{file_name}_c{idx}.png" if idx is not None else f"{file_name}_c.png"
 
@@ -86,4 +85,4 @@ def detect_colonies(
 
     print(f"{len(blobs)} colonies detected in file {save_name}.")
 
-    return len(blobs), output, metadata
+    return len(blobs), output
