@@ -2,10 +2,12 @@ import cv2 as cv
 import numpy as np
 import os
 import yaml
-from inputs import read_time, read_image_paths
-from dish_detection import detect_dishes, crop
-from preprocessing import *
-from counting import detect_colonies
+
+from helpers.inputs import read_image_paths
+from image_manipulation.dish_detection import detect_dishes, crop
+from image_manipulation.preprocessing import preprocess
+from colony_detection.counting import detect_small_colonies
+from helpers.timelapse import *
 
 def pipeline(
         source,
@@ -67,7 +69,7 @@ def pipeline(
         ))
 
     for idx, preprocessed_img in enumerate(preprocessed):
-        colony_metadata = detect_colonies(
+        colony_metadata = detect_small_colonies(
             source=preprocessed_img,
             raw_img=dishes[idx],
             save=save_detected,
@@ -90,7 +92,6 @@ def pipeline(
 
         with open(metadata_file, "w") as f:
             yaml.safe_dump(metadata, f)
-
 
 def mult_pipeline(
         source,
@@ -116,40 +117,75 @@ def mult_pipeline(
 
 def timelapse_pipeline(
         source,
-        save = False,
+        save_intermediates = False,
         save_path = "",
-        n_to_stack=5
+        n_to_stack=5,
+        plot = False,
+        fine_buffer = 2
 ):
     image_paths, file_names = read_image_paths(source)
 
-    fg_masks, coordinates = make_foreground_masks(image_paths=image_paths, save_path=save_path, save=False)
+    fg_masks, bg_masks, coordinates = make_masks(
+        image_paths=image_paths,
+        save_path=save_path,
+        save=save_intermediates,
+        n_to_stack=n_to_stack
+    )
 
-    bg_masks = make_background_masks(image_paths=image_paths, n_to_stack=n_to_stack, coordinates=coordinates, save_path=save_path, save=False)
-    
-    dish_counts = {i: [] for i in range(len(coordinates))}
-    
+    if plot:
+        fig, ax = init_plot()
+
+    n_dishes = len(coordinates)
+
+    dish_states = [DishState(fine_buffer) for _ in range(n_dishes)]
+
+    t0 = None
+
     for img_path, file_name in zip(image_paths, file_names):
-        timestamp = read_time(img_path)
+
+        # handling time steps
+
+        t = read_time(img_path)
+
+        if t0 is None:
+            t0 = t
+        else:
+            pass
+
+        delta_t = (t - t0).total_seconds() / 3600.0
+
+        # cropping and preprocessing
 
         dishes, masks = crop(img_path, coordinates)
-        preprocessed_imgs = []
+
+        # going through each dish and applying preprocessing and masks, dependant on growth state
 
         for idx, (dish, mask) in enumerate(zip(dishes, masks)):
-            preprocessed = preprocess_small(source=dish, mask=mask, file_name=file_name, save=save, save_path=save_path)
 
-            mask_applied = cv.bitwise_and(preprocessed, preprocessed, mask=fg_masks[idx])
-            if save:
-                cv.imwrite(os.path.join(save_path, f"{file_name}_mask1_dish{idx+1}.png"), mask_applied)
+            preprocessed = preprocess(source=dish,
+                                      mask=mask,
+                                      fg_mask=fg_masks[idx],
+                                      bg_mask=bg_masks[idx],
+                                      area_filter=dish_states[idx].fine,
+                                      file_name=file_name,
+                                      save=save_intermediates,
+                                      save_path=save_path
+                                      )
+            
+            if save_intermediates:
+                cv.imwrite(os.path.join(save_path, f"{file_name}_masked_{idx+1}.jpg"), preprocessed)
 
-            mask_applied = cv.bitwise_and(mask_applied, mask_applied, mask=cv.bitwise_not(bg_masks[idx]))
-            if save:
-                cv.imwrite(os.path.join(save_path, f"{file_name}_mask2_dish{idx+1}.png"), mask_applied)
+            count, _, _ = detect_small_colonies(source=preprocessed, raw_img=dish, save=save_intermediates, save_path=save_path, file_name=file_name, idx=idx+1)
+            
+            dish_states[idx].history.append((delta_t, count))        
 
-            preprocessed_imgs.append(mask_applied)
-
-        for idx, img in enumerate(preprocessed_imgs):
-            count, _, _ = detect_colonies(source=img, save=True, save_path=save_path, file_name=os.path.splitext(os.path.basename(img_path))[0], idx=idx+1)
-
-            dish_counts[idx].append((timestamp, count))
-
-    return(dish_counts)
+        if plot:
+            dish_counts_plot = {i: [(timestamp, count) for timestamp, count in dish_states[i].history] for i in range(n_dishes)}
+            update_live_plot(dish_counts_plot, fig, ax)
+            
+        check_state(dish_states)
+    if plot:
+        plt.ioff()
+        plt.show()
+    
+    return(None)

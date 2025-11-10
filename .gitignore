@@ -2,5 +2,6 @@
 __pycache__
 data.yaml
 Optuna Studies
+tuning.py
 test.py
 watershed.py
