@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools >= 80.9.0, setuptools_scm >= 9.2.2"]
+build-backend = "hatchling.build_meta"
+
+[project]
+name = "bacterial_colony_counter_jniklas03"
+dynamic = ["version"]
+authors = [
+	{
+		name="Jakub Niklas",
+		email="jakubniklas03@gmail.com
+	}
+]
+description = "Bacterial colony counter for detecting persistents"
+readme = "README.md"
+requires-python = ">=3.13.7"
+classifiers = [
+	"Programming Language :: Python :: 3",
+	"Operating System :: OS Independent",
+]
+license = ""
+
+[project.urls]
+Homepage = "https://github.com/jniklas03/BacterialColonyCounter"
+
+[tool.setuptools_scm]
+write_to = "bacterial_colony_counter_jniklas03/version.py"
