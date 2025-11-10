@@ -6,3 +6,6 @@ tuning.py
 test.py
 watershed.py
 bacterialcolonycounter.egg-info
+dist
+build
+_version.py
