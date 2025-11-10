@@ -2,12 +2,16 @@ import cv2 as cv
 import numpy as np
 import os
 import yaml
+import matplotlib.pyplot as plt
 
-from helpers.inputs import read_image_paths
-from image_manipulation.dish_detection import detect_dishes, crop
-from image_manipulation.preprocessing import preprocess
-from colony_detection.counting import detect_small_colonies
-from helpers.timelapse import *
+from bacterialcolonycounter.helpers.timelapse import make_masks, DishState, check_state
+from bacterialcolonycounter.helpers.inputs import read_time, read_image_paths
+from bacterialcolonycounter.helpers.plotting import init_plot, update_live_plot
+
+from bacterialcolonycounter.image_manipulation.preprocessing import preprocess
+from bacterialcolonycounter.image_manipulation.dish_detection import detect_dishes, crop
+
+from bacterialcolonycounter.colony_detection.counting import detect_small_colonies
 
 def pipeline(
         source,

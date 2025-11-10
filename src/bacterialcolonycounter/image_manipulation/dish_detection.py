@@ -3,7 +3,7 @@ import numpy as np
 import os
 import warnings
 
-from helpers.inputs import read_img
+from bacterialcolonycounter.helpers.inputs import read_img
 
 def sort_circles(circles, row_tolerance=100):
     """

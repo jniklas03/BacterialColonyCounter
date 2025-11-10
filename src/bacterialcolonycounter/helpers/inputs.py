@@ -1,6 +1,5 @@
 import cv2 as cv, numpy as np, os
 import re
-import yaml
 from pypdf import PdfReader
 from datetime import datetime
 
