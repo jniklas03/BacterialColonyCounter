@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 import os
 import warnings
-from bacterialcolonycounter.helpers.inputs import read_img
+from helpers.inputs import read_img
 
 def detect_colonies(
         source,
@@ -76,7 +76,7 @@ def detect_colonies(
 
     output = cv.drawKeypoints(raw_img, blobs, np.array([]), (0,255,0), cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS) # Output = initial image with colonies marked
 
-    save_name = f"{file_name}_c{idx}.png" if idx is not None else f"{file_name}_c.png"
+    save_name = f"{file_name}_colonies_{idx}.png" if idx is not None else f"{file_name}_colonies.png"
 
     if save: # Saving images with marked colonies
         save_path_blob_detection = os.path.join(save_path, "Colonies")

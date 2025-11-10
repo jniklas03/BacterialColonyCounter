@@ -22,7 +22,8 @@ def preprocess(
         save = False,
         save_path = "",
         file_name = "preprocessed",
-        idx: int = None
+        idx: int = None,
+        debug: bool = False
         ):
     """
     Preprocesses input image of cropped dish into a thresholded binary image of colonies.
@@ -66,7 +67,16 @@ def preprocess(
     if save and not save_path:
         warnings.warn(f"No specified save path. Images saved in the current directory ({os.getcwd()}) under ...Preprocessing.")
 
+    if save or debug:
+        save_path = os.path.join(save_path, "Preprocessing")
+        os.makedirs(save_path, exist_ok=True)
+
     green_channel = img[:, :, 1]
+    
+    if debug:
+        debug_name = f"{file_name}_green_channel_{idx}.png" if idx is not None else f"{file_name}_green_channel.png"
+        os.makedirs(save_path, exist_ok=True)
+        cv.imwrite(os.path.join(save_path, debug_name), green_channel)
 
     threshold = cv.adaptiveThreshold(
         src=green_channel,
@@ -76,6 +86,10 @@ def preprocess(
         blockSize=s,
         C=C
     )
+    
+    if debug:
+        debug_name = f"{file_name}_threshold_{idx}.png" if idx is not None else f"{file_name}_threshold.png"
+        cv.imwrite(os.path.join(save_path, debug_name), threshold)
 
     if area_filter:
         num_labels, labels, stats, _ = cv.connectedComponentsWithStats(threshold, connectivity=8)
@@ -85,35 +99,164 @@ def preprocess(
             area = stats[i, cv.CC_STAT_AREA]
             if min_area <= area <= max_area:
                 filtered[labels == i] = 255
+        
+        if debug:
+            debug_name = f"{file_name}_area_filtered_{idx}.png" if idx is not None else f"{file_name}_area_filtered.png"
+            cv.imwrite(os.path.join(save_path, debug_name), filtered)
     else:
         filtered = threshold
 
     kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
-
     eroded = cv.morphologyEx(filtered, cv.MORPH_ERODE, kernel)
+    
+    if debug:
+        debug_name = f"{file_name}_eroded_{idx}.png" if idx is not None else f"{file_name}_eroded.png"
+        cv.imwrite(os.path.join(save_path, debug_name), eroded)
 
     if not area_filter:
         watershed()
 
     if mask is not None:
         cropped = cv.bitwise_and(eroded, eroded, mask=mask)
+        if debug:
+            debug_name = f"{file_name}_mask_applied_{idx}.png" if idx is not None else f"{file_name}_mask_applied.png"
+            cv.imwrite(os.path.join(save_path, debug_name), cropped)
     else:
         cropped = eroded
 
-    if fg_mask and bg_mask is not None:
-            preprocessed = cv.bitwise_and(cropped, cropped, mask=fg_mask)
-            preprocessed = cv.bitwise_and(preprocessed, preprocessed, mask=cv.bitwise_not(bg_mask))
+    if fg_mask is not None:
+        preprocessed = cv.bitwise_and(cropped, cropped, mask=fg_mask)
+        if debug:
+            debug_name = f"{file_name}_fg_mask_applied_{idx}.png" if idx is not None else f"{file_name}_fg_mask_applied.png"
+            cv.imwrite(os.path.join(save_path, debug_name), preprocessed)
+    else:
+        preprocessed = cropped
+
+    if bg_mask is not None:
+        preprocessed = cv.bitwise_and(preprocessed, preprocessed, mask=cv.bitwise_not(bg_mask))
+        if debug:
+            debug_name = f"{file_name}_bg_mask_applied_{idx}.png" if idx is not None else f"{file_name}_bg_mask_applied.png"
+            cv.imwrite(os.path.join(save_path, debug_name), preprocessed)
 
     save_name = f"{file_name}_preprocessed_{idx}.png" if idx is not None else f"{file_name}_preprocessed.png"
 
     if save:
-        save_path_preprocessing = os.path.join(save_path, "Preprocessing")
-        os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, save_name), preprocessed)
+        cv.imwrite(os.path.join(save_path, save_name), preprocessed)
 
     print(f"File {save_name} preprocessed.")
 
     return preprocessed
+
+
+# def preprocess(
+#         source,
+#         mask = None,
+#         fg_mask = None,
+#         bg_mask = None,
+#         area_filter = True,
+#         s = 121,
+#         C = 11,
+#         kernel_size = 3,
+#         min_area = 5,
+#         max_area = 200,
+#         save = False,
+#         save_path = "",
+#         file_name = "preprocessed",
+#         idx: int = None
+#         ):
+#     """
+#     Preprocesses input image of cropped dish into a thresholded binary image of colonies.
+
+#     Returns preprocessed image.
+    
+#     Parameters
+#     ----------
+#     source: str or np.ndarray
+#         Image of dish, or string to the image path.
+#     mask: np.ndarray, optional
+#         Mask of background area outside of dish, if None the background crop won't be applied and watershedding won't work.
+#     fg_mask: np.ndarray, optional
+#         "Ground truth positive" mask of colonies from a time point in the future. From preprocess_fg_isolation()
+#     bg_mask: np.ndarray, optional
+#         "Ground truth negative" mask of the petri dish, marker, and other artifacts. From preprocess_bg_isolation().
+#     area_filter: bool, default=True,
+#         Filter large objects by virtue of connected components. Useful for just formed colonies to reduce the noise; turn off when colonies are larger.
+#     s: int, default=121
+#         Block size for thresholding. Bigger numbers include more to threshold.
+#     C: int, default=11
+#         Constant to subtract from thresholding.
+#     kernel_size: int, optional
+#         Kernel size for erosion. Used for noise removal and colony separation.
+#     save: bool, default=True
+#         Whether to save the preprocessed image.
+#     save_path: str, optional
+#         Path where the image should be saved.
+#     file_name: str, optional
+#         Name to save the preprocessed image as.
+#     idx: int, optional
+#         Passed by a wrapper function when processing mutliple dishes.    
+    
+#     Returns
+#     -------
+#     np.ndarray
+#         Preprocessed dish.
+#     """
+#     img = read_img(source=source)
+
+#     if save and not save_path:
+#         warnings.warn(f"No specified save path. Images saved in the current directory ({os.getcwd()}) under ...Preprocessing.")
+
+#     green_channel = img[:, :, 1]
+
+#     threshold = cv.adaptiveThreshold(
+#         src=green_channel,
+#         maxValue=255,
+#         adaptiveMethod=cv.ADAPTIVE_THRESH_GAUSSIAN_C,
+#         thresholdType=cv.THRESH_BINARY_INV,
+#         blockSize=s,
+#         C=C
+#     )
+
+#     if area_filter:
+#         num_labels, labels, stats, _ = cv.connectedComponentsWithStats(threshold, connectivity=8)
+#         filtered = np.zeros_like(threshold)
+
+#         for i in range(1, num_labels):  # skip background
+#             area = stats[i, cv.CC_STAT_AREA]
+#             if min_area <= area <= max_area:
+#                 filtered[labels == i] = 255
+#     else:
+#         filtered = threshold
+
+#     kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
+
+#     eroded = cv.morphologyEx(filtered, cv.MORPH_ERODE, kernel)
+
+#     if not area_filter:
+#         watershed()
+
+#     if mask is not None:
+#         cropped = cv.bitwise_and(eroded, eroded, mask=mask)
+#     else:
+#         cropped = eroded
+
+#     if fg_mask is not None:
+#             preprocessed = cv.bitwise_and(cropped, cropped, mask=fg_mask)
+#     if bg_mask is not None:
+#             preprocessed = cv.bitwise_and(preprocessed, preprocessed, mask=cv.bitwise_not(bg_mask))
+#     else:
+#         preprocessed = cropped
+
+#     save_name = f"{file_name}_preprocessed_{idx}.png" if idx is not None else f"{file_name}_preprocessed.png"
+
+#     if save:
+#         save_path_preprocessing = os.path.join(save_path, "Preprocessing")
+#         os.makedirs(save_path_preprocessing, exist_ok=True)
+#         cv.imwrite(os.path.join(save_path_preprocessing, save_name), preprocessed)
+
+#     print(f"File {save_name} preprocessed.")
+
+#     return preprocessed
 
 def preprocess_fg_isolation(
         source,

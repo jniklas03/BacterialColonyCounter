@@ -137,7 +137,7 @@ def detect_dishes(
         dp=3, # resolution used for the detection; dp=2 means half resolution of the original image
         minDist=800, # minimum distance between the centers of circles in px
         param1=125, # upper threshold for canny edge detection (uses canny edge detection internally)
-        param2=70, # threshold for center detection, turn this up if non-dishes are detected
+        param2=100, # threshold for center detection, turn this up if non-dishes are detected
         minRadius=400, # minimum and maxmimum radius in px
         maxRadius=600 
     )
@@ -167,7 +167,7 @@ def detect_dishes(
                 }]
 
 
-            save_name = f"{file_name}_d{idx}.png" if idx is not None else f"{file_name}_d.png"
+            save_name = f"{file_name}_dish_{idx}.png" if idx is not None else f"{file_name}_dish.png"
 
             if save: # saving the dishes if the flag is passed
                 os.makedirs(save_path_dish_detection, exist_ok=True)
