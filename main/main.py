@@ -8,7 +8,7 @@ from helpers.timelapse import make_masks, DishState, check_state
 from helpers.inputs import read_time, read_image_paths
 from helpers.plotting import init_plot, update_live_plot
 
-from image_manipulation.preprocessing import preprocess
+from image_manipulation.preprocessing import preprocess, preprocess_fg_isolation
 from image_manipulation.dish_detection import detect_dishes, crop
 
 from colony_detection.counting import detect_colonies
@@ -19,8 +19,7 @@ def pipeline(
         save_metadata=False,
         save_dishes=False,
         save_preprocessed=False,
-        save_detected=True,
-        debug=False
+        save_detected=True
         ):
     """
     Process image to get yield cropped dishes, with circled colonies.
@@ -56,8 +55,7 @@ def pipeline(
         save=save_dishes,
         save_path=save_path,
         file_name=file_name,
-        metadata=metadata,
-        debug=debug
+        metadata=metadata
     )
     
     preprocessed = []
@@ -70,8 +68,7 @@ def pipeline(
             save=save_preprocessed,
             save_path=save_path,
             file_name=file_name,
-            idx=idx+1,
-            debug=debug
+            idx=idx+1
         ))
 
     for idx, preprocessed_img in enumerate(preprocessed):
@@ -123,12 +120,13 @@ def mult_pipeline(
 def timelapse_pipeline(
         source,
         save_intermediates = False,
-        debug = False,
         save_path = "",
-        n_to_stack=5,
+        n_to_stack = 5,
         plot = False,
-        fine_buffer = 2
+        fine_buffer = 3
 ):
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (3, 3))
+
     image_paths, file_names = read_image_paths(source)
 
     fg_masks, bg_masks, coordinates = make_masks(
@@ -170,24 +168,21 @@ def timelapse_pipeline(
             if save_intermediates:
                 os.makedirs(os.path.join(save_path, "Dishes"), exist_ok=True)
                 cv.imwrite(os.path.join(save_path, "Dishes", f"{file_name}_dish_{idx+1}.jpg"), dish)
-        
+
             preprocessed = preprocess(source=dish,
-                                      mask=mask,
-                                      fg_mask=fg_masks[idx],
-                                      bg_mask=bg_masks[idx],
-                                      area_filter=dish_states[idx].fine,
-                                      file_name=file_name,
-                                      save=save_intermediates,
-                                      debug=debug,
-                                      save_path=save_path,
-                                      idx=idx+1
-                                      )
-            
-            if save_intermediates:
-                cv.imwrite(os.path.join(save_path, f"{file_name}_masked_{idx+1}.jpg"), preprocessed)
+                        mask=mask,
+                        fg_mask=fg_masks[idx],
+                        bg_mask=bg_masks[idx],
+                        area_filter=dish_states[idx].fine,
+                        file_name=file_name,
+                        save=save_intermediates,
+                        save_path=save_path,
+                        idx=idx+1
+                        )
+            if not dish_states[idx].fine:
+                preprocessed = cv.morphologyEx(preprocessed, cv.MORPH_ERODE, kernel)
 
             count, _ = detect_colonies(source=preprocessed, raw_img=dish, save=save_intermediates, save_path=save_path, file_name=file_name, idx=idx+1)
-            
             dish_states[idx].history.append((delta_t, count))        
 
         if plot:
