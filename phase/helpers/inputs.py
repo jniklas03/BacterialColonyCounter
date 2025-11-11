@@ -2,6 +2,7 @@ import cv2 as cv, numpy as np, os
 import re
 from pypdf import PdfReader
 from datetime import datetime
+import sys
 
 def read_img(source):
     """
@@ -157,3 +158,14 @@ def read_pdf(
     output = dict(zip(all_names, all_counts))
 
     return(output)
+
+def show_image(
+        source,
+        name = "image"
+):
+    cv.imshow(f"{name}", source)
+    key = cv.waitKey(0)
+    if key == ord("e"):
+        sys.exit("Exiting")
+    elif key == ord("s"):
+        cv.imwrite(f"{name}.png", source)
