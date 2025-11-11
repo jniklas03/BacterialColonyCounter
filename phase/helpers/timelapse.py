@@ -2,8 +2,8 @@ import cv2 as cv
 import numpy as np
 import os
 
-from image_manipulation.dish_detection import detect_dishes, crop
-from image_manipulation.preprocessing import preprocess_bg_isolation, preprocess_fg_isolation
+from ..image_manipulation.dish_detection import detect_dishes, crop
+from ..image_manipulation.preprocessing import preprocess_bg_isolation, preprocess_fg_isolation
 
 def make_masks(
         image_paths,

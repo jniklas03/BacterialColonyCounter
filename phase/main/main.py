@@ -4,14 +4,14 @@ import os
 import yaml
 import matplotlib.pyplot as plt
 
-from helpers.timelapse import make_masks, DishState, check_state
-from helpers.inputs import read_time, read_image_paths
-from helpers.plotting import init_plot, update_live_plot
+from ..helpers.timelapse import make_masks, DishState, check_state
+from ..helpers.inputs import read_time, read_image_paths
+from ..helpers.plotting import init_plot, update_live_plot
 
-from image_manipulation.preprocessing import preprocess, preprocess_fg_isolation
-from image_manipulation.dish_detection import detect_dishes, crop
+from ..image_manipulation.preprocessing import preprocess, preprocess_fg_isolation
+from ..image_manipulation.dish_detection import detect_dishes, crop
 
-from colony_detection.counting import detect_colonies
+from ..colony_detection.counting import detect_colonies
 
 def pipeline(
         source,
