@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 import os
 import warnings
+
 from helpers.inputs import read_img
 
 def detect_colonies(
@@ -66,7 +67,7 @@ def detect_colonies(
     params.minCircularity = 0.1
 
     params.filterByConvexity = True # "fullness" of the circle; think of a pie chart
-    params.minConvexity = 0.85
+    params.minConvexity = 0.7
 
     params.filterByInertia = True # how elongated is the circle - lower values mean more elongated.
     params.minInertiaRatio = 0.1
