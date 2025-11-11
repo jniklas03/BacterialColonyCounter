@@ -66,8 +66,10 @@ def preprocess(
     if save and not save_path:
         warnings.warn(f"No specified save path. Images saved in the current directory ({os.getcwd()}) under ...Preprocessing.")
 
+    # isolating green channel
     green_channel = img[:, :, 1]
 
+    # thresholding
     threshold = cv.adaptiveThreshold(
         src=green_channel,
         maxValue=255,
@@ -77,46 +79,48 @@ def preprocess(
         C=C
     )
 
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
-
+    # area filter if area_filter flag is passed, otherwise watershed
     if area_filter:
         num_labels, labels, stats, _ = cv.connectedComponentsWithStats(threshold, connectivity=8)
         filtered = np.zeros_like(threshold)
 
-        for i in range(1, num_labels):  # skip background
+        for i in range(1, num_labels):  # skips background
             area = stats[i, cv.CC_STAT_AREA]
             if min_area <= area <= max_area:
                 filtered[labels == i] = 255
-
-        eroded = cv.morphologyEx(filtered, cv.MORPH_ERODE, kernel)
     else:
-        eroded = cv.morphologyEx(threshold, cv.MORPH_ERODE, kernel, iterations=3)
-    
-    if not area_filter:
+        filtered = threshold
         watershed()
 
+    # "crops" the outside of the dish if mask is passed
     if mask is not None:
-        cropped = cv.bitwise_and(eroded, eroded, mask=mask)
+        cropped = cv.bitwise_and(filtered, filtered, mask=mask)
     else:
-        cropped = eroded
+        cropped = filtered
 
+    # applies fg_mask and bg_mask if passed
     if fg_mask is not None:
-            preprocessed = cv.bitwise_and(cropped, cropped, mask=fg_mask)
+            masked1 = cv.bitwise_and(cropped, cropped, mask=fg_mask)
     if bg_mask is not None:
-            preprocessed = cv.bitwise_and(preprocessed, preprocessed, mask=cv.bitwise_not(bg_mask))
+            masked2 = cv.bitwise_and(masked1, masked1, mask=cv.bitwise_not(bg_mask))
     else:
-        preprocessed = cropped
+        masked2 = cropped
+    
+    # erosion
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
+    eroded = cv.morphologyEx(masked2, cv.MORPH_ERODE, kernel)
 
+    # saving
     save_name = f"{file_name}_preprocessed_{idx}.png" if idx is not None else f"{file_name}_preprocessed.png"
 
     if save:
         save_path_preprocessing = os.path.join(save_path, "Preprocessing")
         os.makedirs(save_path_preprocessing, exist_ok=True)
-        cv.imwrite(os.path.join(save_path_preprocessing, save_name), preprocessed)
+        cv.imwrite(os.path.join(save_path_preprocessing, save_name), eroded)
 
     print(f"File {save_name} preprocessed.")
 
-    return preprocessed
+    return eroded
 
 def preprocess_fg_isolation(
         source,
