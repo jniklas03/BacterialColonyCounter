@@ -11,16 +11,16 @@ from helpers.plotting import init_plot, update_live_plot
 from image_manipulation.preprocessing import preprocess
 from image_manipulation.dish_detection import detect_dishes, crop
 
-from colony_detection.counting import detect_small_colonies
+from colony_detection.counting import detect_colonies
 
 def pipeline(
         source,
-        kernel_size=500, 
         save_path = "",
         save_metadata=False,
         save_dishes=False,
         save_preprocessed=False,
-        save_detected=True
+        save_detected=True,
+        debug=False
         ):
     """
     Process image to get yield cropped dishes, with circled colonies.
@@ -51,12 +51,13 @@ def pipeline(
 
     metadata = {file_name: {}}
 
-    dishes, masks, dish_metadata = detect_dishes(
+    dishes, masks, coordinates, dish_metadata = detect_dishes(
         source=img,
         save=save_dishes,
         save_path=save_path,
         file_name=file_name,
-        metadata=metadata
+        metadata=metadata,
+        debug=debug
     )
     
     preprocessed = []
@@ -65,22 +66,22 @@ def pipeline(
         preprocessed.append(preprocess(
             source=dish,
             mask=masks[idx],
-            kernel_size=kernel_size,
+            area_filter=False,
             save=save_preprocessed,
             save_path=save_path,
             file_name=file_name,
-            idx=idx+1
+            idx=idx+1,
+            debug=debug
         ))
 
     for idx, preprocessed_img in enumerate(preprocessed):
-        colony_metadata = detect_small_colonies(
+        colony_metadata = detect_colonies(
             source=preprocessed_img,
             raw_img=dishes[idx],
             save=save_detected,
             save_path=save_path,
             file_name=file_name,
-            idx=idx+1,
-            metadata=metadata
+            idx=idx+1
         )
 
     if save_metadata:
@@ -122,6 +123,7 @@ def mult_pipeline(
 def timelapse_pipeline(
         source,
         save_intermediates = False,
+        debug = False,
         save_path = "",
         n_to_stack=5,
         plot = False,
@@ -165,7 +167,10 @@ def timelapse_pipeline(
         # going through each dish and applying preprocessing and masks, dependant on growth state
 
         for idx, (dish, mask) in enumerate(zip(dishes, masks)):
-
+            if save_intermediates:
+                os.makedirs(os.path.join(save_path, "Dishes"), exist_ok=True)
+                cv.imwrite(os.path.join(save_path, "Dishes", f"{file_name}_dish_{idx+1}.jpg"), dish)
+        
             preprocessed = preprocess(source=dish,
                                       mask=mask,
                                       fg_mask=fg_masks[idx],
@@ -173,13 +178,15 @@ def timelapse_pipeline(
                                       area_filter=dish_states[idx].fine,
                                       file_name=file_name,
                                       save=save_intermediates,
-                                      save_path=save_path
+                                      debug=debug,
+                                      save_path=save_path,
+                                      idx=idx+1
                                       )
             
             if save_intermediates:
                 cv.imwrite(os.path.join(save_path, f"{file_name}_masked_{idx+1}.jpg"), preprocessed)
 
-            count, _, _ = detect_small_colonies(source=preprocessed, raw_img=dish, save=save_intermediates, save_path=save_path, file_name=file_name, idx=idx+1)
+            count, _ = detect_colonies(source=preprocessed, raw_img=dish, save=save_intermediates, save_path=save_path, file_name=file_name, idx=idx+1)
             
             dish_states[idx].history.append((delta_t, count))        
 
