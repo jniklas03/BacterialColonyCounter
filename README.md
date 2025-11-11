@@ -14,15 +14,21 @@ Integer sit amet iaculis nisi, nec fermentum dui. Suspendisse sem dolor, commodo
 ## Demonstration
 
 ### Cropping
-Integer sit amet iaculis nisi, nec fermentum dui. Suspendisse sem dolor, commodo ut tellus vitae, scelerisque posuere nulla. Phasellus lobortis nec diam ut cursus. Donec dapibus massa eu ligula imperdiet posuere. Nullam efficitur magna at ipsum volutpat dapibus. Aenean vulputate odio eget ligula pellentesque pulvinar. Cras nisi ante, rutrum id vehicula nec, dapibus vel risus. Sed sit amet lorem dignissim, pellentesque neque eget, fringilla odio. Praesent laoreet venenatis nisi mollis tempor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id auctor odio.<br />
+The dish detection and cropping module is based on the OpenCV implementation of Hough Circle Transform. It takes an input image of `n` petri dishes and returns crops of each petri dish.<br />
 ![dish_detection](https://github.com/user-attachments/assets/f779750b-5d15-4f07-99ff-20e7d450e7b7)
 
 ### Preprocessing
-Integer sit amet iaculis nisi, nec fermentum dui. Suspendisse sem dolor, commodo ut tellus vitae, scelerisque posuere nulla. Phasellus lobortis nec diam ut cursus. Donec dapibus massa eu ligula imperdiet posuere. Nullam efficitur magna at ipsum volutpat dapibus. Aenean vulputate odio eget ligula pellentesque pulvinar. Cras nisi ante, rutrum id vehicula nec, dapibus vel risus. Sed sit amet lorem dignissim, pellentesque neque eget, fringilla odio. Praesent laoreet venenatis nisi mollis tempor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id auctor odio.<br />
+The preprocessing is modular. Firstly, it contains two functions for mask creation for use in timelapse pipelines, `preprocess_fg_isolation` and `preprocess_bg_isolation`. They use first and last images as ground truth for the foreground (colonies) and background (artifacts) respectively. Finally the core preprocessing function, which:
+- isolates the green channel of the input image
+- thresholds it using OpenCV's adaptive thresholding
+- filters for large artifacts using area selection using OpenCV's connected components
+- erodes to remove further noise and artefacts and to separate touching colonies
+- optionally applies the foreground and background masks<br />
 ![preprocessing](https://github.com/user-attachments/assets/1031dea3-fe61-4884-a9a4-17194d918977)
 
 ### Counting
-Integer sit amet iaculis nisi, nec fermentum dui. Suspendisse sem dolor, commodo ut tellus vitae, scelerisque posuere nulla. Phasellus lobortis nec diam ut cursus. Donec dapibus massa eu ligula imperdiet posuere. Nullam efficitur magna at ipsum volutpat dapibus. Aenean vulputate odio eget ligula pellentesque pulvinar. Cras nisi ante, rutrum id vehicula nec, dapibus vel risus. Sed sit amet lorem dignissim, pellentesque neque eget, fringilla odio. Praesent laoreet venenatis nisi mollis tempor. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Etiam id auctor odio.<br />
+The colony detection is done using OpenCV's `BlobDetector`.
+<br />
 
 ![colony_detectino](https://github.com/user-attachments/assets/de310c92-85e1-4df9-9f02-a6fb837af227)
 
