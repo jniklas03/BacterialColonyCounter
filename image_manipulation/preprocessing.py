@@ -77,6 +77,8 @@ def preprocess(
         C=C
     )
 
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
+
     if area_filter:
         num_labels, labels, stats, _ = cv.connectedComponentsWithStats(threshold, connectivity=8)
         filtered = np.zeros_like(threshold)
@@ -85,13 +87,11 @@ def preprocess(
             area = stats[i, cv.CC_STAT_AREA]
             if min_area <= area <= max_area:
                 filtered[labels == i] = 255
+
+        eroded = cv.morphologyEx(filtered, cv.MORPH_ERODE, kernel)
     else:
-        filtered = threshold
-
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (kernel_size, kernel_size))
-
-    eroded = cv.morphologyEx(filtered, cv.MORPH_ERODE, kernel)
-
+        eroded = cv.morphologyEx(threshold, cv.MORPH_ERODE, kernel, iterations=3)
+    
     if not area_filter:
         watershed()
 
