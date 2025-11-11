@@ -1,10 +1,28 @@
-.venv
-__pycache__
-data.yaml
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual envs
+venv/
+.env/
+.venv/
+
+# VS Code
+.vscode/
+
+# Build / Packaging
+build/
+dist/
+*.egg-info/
+
+# Test / coverage
+*.coverage
+.coverage
+.pytest_cache/
+
+# Other
 Optuna Studies
 tuning.py
-test.py
 watershed.py
-bacterialcolonycounter.egg-info
-dist
-build
